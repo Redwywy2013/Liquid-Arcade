@@ -25,7 +25,7 @@
 body{
   margin:0;
   min-height:100vh;
-  overflow:auto;
+  overflow:hidden;
   color:var(--text);
   font-family:system-ui,sans-serif;
   background:
@@ -49,11 +49,11 @@ body:before{
   position:relative;
   z-index:1;
   width:min(1540px,calc(100vw - 26px));
-  height:calc(100vh - 26px);
-  min-height:0;
+  height:calc(100dvh - 26px);
+  min-height:650px;
   margin:13px auto;
   display:grid;
-  grid-template-rows:auto auto 1fr;
+  grid-template-rows:auto auto minmax(0,1fr);
   gap:12px;
   padding:14px;
   border:1px solid rgba(148,163,184,.28);
@@ -61,6 +61,7 @@ body:before{
   background:rgba(2,6,23,.48);
   box-shadow:0 24px 90px rgba(0,0,0,.52),inset 0 0 90px rgba(56,189,248,.04);
   backdrop-filter:blur(14px);
+  overflow:hidden;
 }
 .hero{
   display:flex;
@@ -68,6 +69,7 @@ body:before{
   justify-content:center;
   gap:12px;
   min-height:56px;
+  flex:0 0 auto;
 }
 .logo-mark{
   width:52px;
@@ -85,6 +87,7 @@ h1{
   position:relative;
   padding:0 18px;
   border-bottom:1px solid rgba(59,130,246,.45);
+  flex:0 0 auto;
 }
 .category-tabs{
   display:grid;
@@ -141,9 +144,10 @@ h1{
 }
 .content-shell{
   display:grid;
-  grid-template-columns:330px 1fr;
+  grid-template-columns:330px minmax(0,1fr);
   gap:18px;
   min-height:0;
+  height:100%;
   padding:14px;
   border:1px solid rgba(59,130,246,.34);
   border-radius:24px;
@@ -151,9 +155,10 @@ h1{
   box-shadow:inset 0 0 70px rgba(56,189,248,.035);
   overflow:hidden;
 }
+.drawer{min-height:0;overflow:hidden}
 .panel{
   min-height:0;
-  max-height:100%;
+  height:100%;
   background:linear-gradient(180deg,rgba(15,23,42,.72),rgba(2,6,23,.64));
   border:1px solid rgba(148,163,184,.20);
   border-radius:24px;
@@ -165,7 +170,8 @@ h1{
   scrollbar-width:thin;
 }
 .panel-art{
-  height:115px;
+  height:135px;
+  flex:0 0 135px;
   border-radius:22px;
   display:grid;
   place-items:center;
@@ -173,8 +179,8 @@ h1{
   background:radial-gradient(circle at 50% 50%,color-mix(in srgb,var(--selected-glow),transparent 52%),transparent 42%);
 }
 .panel-art svg{
-  width:82px;
-  height:82px;
+  width:100px;
+  height:100px;
   filter:drop-shadow(0 0 24px var(--selected-glow));
 }
 .panel h2{
@@ -216,8 +222,7 @@ h1{
   display:grid;
   gap:8px;
   margin:0 0 14px;
-  overflow:auto;
-  scrollbar-width:thin;
+  overflow:visible;
 }
 .feature{
   display:flex;
@@ -262,28 +267,25 @@ h1{
 .play:hover{filter:brightness(1.15)}
 .tab-panel{
   min-height:0;
+  height:100%;
   overflow:hidden;
 }
 .grid{
   height:100%;
+  max-height:100%;
   display:grid;
   grid-template-columns:repeat(3,minmax(0,1fr));
   gap:14px;
   align-content:start;
   overflow-y:auto;
+  overflow-x:hidden;
   scrollbar-width:thin;
-  padding-right:8px;
-}
-.grid.compact .card{min-height:0}
-.grid.scrollable{
-  max-height:100%;
-  overflow-y:auto;
   padding-right:8px;
   padding-bottom:12px;
 }
 .card{
   position:relative;
-  min-height:190px;
+  min-height:185px;
   overflow:hidden;
   background:linear-gradient(180deg,rgba(15,23,42,.70),rgba(2,6,23,.62));
   border:1px solid rgba(148,163,184,.18);
@@ -303,7 +305,7 @@ h1{
   content:"";
   position:absolute;
   left:50%;
-  top:47px;
+  top:52px;
   width:68px;
   height:68px;
   transform:translate(-50%,-50%);
@@ -316,8 +318,8 @@ h1{
 .icon{
   position:relative;
   z-index:1;
-  width:62px;
-  height:62px;
+  width:54px;
+  height:54px;
   border-radius:22px;
   display:grid;
   place-items:center;
@@ -328,22 +330,22 @@ h1{
     inset 0 0 20px rgba(255,255,255,.03);
 }
 .icon svg{
-  width:46px;
-  height:46px;
+  width:40px;
+  height:40px;
   filter:drop-shadow(0 0 16px var(--glow));
 }
 .card h2{
   position:relative;
   margin:0 0 6px;
-  font-size:22px;
+  font-size:20px;
   letter-spacing:-.045em;
 }
 .card p{
   position:relative;
   margin:0 0 10px;
   color:#cbd5e1;
-  font-size:13px;
-  line-height:1.35;
+  font-size:12px;
+  line-height:1.32;
   display:-webkit-box;
   -webkit-line-clamp:3;
   -webkit-box-orient:vertical;
@@ -361,30 +363,23 @@ h1{
   font-size:10px;
   font-weight:900;
 }
-.card-route{
-  position:relative;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  color:var(--glow);
-  font-weight:850;
-  font-size:13px;
-  margin-top:auto;
-}
-.card-route span:last-child{font-size:16px}
+
 @media(max-width:1250px){
-  .content-shell{grid-template-columns:280px 1fr}
+  .content-shell{grid-template-columns:280px minmax(0,1fr)}
   .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .category-tab{font-size:13px;padding:0 10px}
 }
 @media(max-width:900px){
   body{overflow:auto}
-  .app{height:auto;min-height:100vh;width:100%;margin:0;border-radius:0}
+  .app{height:auto;min-height:100dvh;width:100%;margin:0;border-radius:0;overflow:visible}
   .category-tabs{grid-template-columns:repeat(3,1fr);gap:6px;overflow:visible}
-  .category-tab{height:52px;transform:none;border-radius:16px}.category-tab span{transform:none}.category-tab.active{transform:none}
-  .content-shell{grid-template-columns:1fr;overflow:visible}
-  .panel{min-height:420px;max-height:none}.grid{grid-template-columns:1fr;overflow:visible}.grid.scrollable{max-height:none;overflow:visible}
+  .category-tab{height:52px;transform:none;border-radius:16px}
+  .category-tab span{transform:none}
+  .category-tab.active{transform:none}
+  .content-shell{grid-template-columns:1fr;overflow:visible;height:auto}
+  .drawer{overflow:visible}
+  .panel{min-height:420px;max-height:none;height:auto;overflow:visible}
+  .grid{grid-template-columns:1fr;overflow:visible;height:auto;max-height:none}
 }
 </style>
 </head>
@@ -578,7 +573,6 @@ function renderCard(game){
     <div class="icon">${game.icon}</div>
     <h2>${game.title}</h2>
     <p>${game.desc}</p>
-    <div class="card-route"><span>${game.route}</span><span>↗</span></div>
   `;
 
   card.addEventListener("click",()=>selectGame(game,card));
