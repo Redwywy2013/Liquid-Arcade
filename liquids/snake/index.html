@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smooth Snake Offline</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 20% 20%,#143454,#07111f 45%,#020617);color:#e5f0ff;font-family:system-ui,sans-serif;display:flex;justify-content:center;align-items:stretch;min-height:100vh;overflow:hidden}
+#wrap{display:flex;gap:22px;align-items:center;justify-content:center;width:100vw;height:100vh;padding:12px;box-sizing:border-box}
+#ui{width:270px;flex:0 0 270px;align-self:center;background:rgba(15,23,42,.78);border:1px solid rgba(148,163,184,.25);border-radius:24px;padding:18px;box-shadow:0 20px 70px rgba(0,0,0,.45);backdrop-filter:blur(12px);max-height:none;overflow:visible}
+h1{margin:0 0 14px;font-size:30px;letter-spacing:-.04em}.stat{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}.box{background:rgba(2,6,23,.45);border:1px solid rgba(148,163,184,.16);border-radius:16px;padding:12px}.box span{display:block;color:#94a3b8;font-size:12px;text-transform:uppercase;letter-spacing:.07em}.box b{font-size:25px}button,select,input{width:100%;margin-top:8px;padding:10px;border-radius:12px;border:1px solid #475569;background:#111827;color:white;font-weight:800;cursor:pointer}input[type="color"]{height:42px;padding:4px}input[type="number"]{cursor:text}button:hover{filter:brightness(1.15)}#start{background:linear-gradient(135deg,#0ea5e9,#22c55e);border:0}.bind{display:flex;gap:6px;margin-top:6px}.bind button{flex:1;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.listening{background:#facc15!important;color:#111827!important}.hint{color:#94a3b8;font-size:13px;line-height:1.4;margin-top:12px}.setting-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.setting-row .box{padding:10px}.tabs{display:flex;gap:0;margin:14px -10px 14px;padding:0 6px}.tab-btn{position:relative;margin:0 -1px -1px 0;padding:9px 8px;font-size:11px;border-radius:12px 12px 0 0;border:1px solid rgba(148,163,184,.22);border-bottom-color:rgba(148,163,184,.22);background:rgba(15,23,42,.55);color:#94a3b8;box-shadow:none}.tab-btn:hover{filter:none;background:rgba(30,41,59,.8);color:#e5f0ff}.tab-btn.active{z-index:2;background:rgba(15,23,42,.96);border-color:rgba(148,163,184,.32);border-bottom-color:rgba(15,23,42,.96);color:#e5f0ff}.tab-panel{display:none}.tab-panel.active{display:block}.check-row{display:flex;align-items:center;gap:10px;margin-top:8px;color:#e5f0ff;font-weight:800}.check-row input{width:auto;margin:0;accent-color:#22c55e}.overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(2,6,23,.45);backdrop-filter:blur(5px);z-index:10}.overlay.show{display:flex}.popup{width:min(360px,calc(100vw - 32px));background:rgba(15,23,42,.94);border:1px solid rgba(148,163,184,.28);border-radius:24px;padding:24px;text-align:center;box-shadow:0 24px 80px rgba(0,0,0,.55)}.popup h2{margin:0 0 8px;font-size:34px;letter-spacing:-.04em}.popup p{margin:8px 0;color:#94a3b8}.popup .big-score{font-size:42px;color:#e5f0ff;font-weight:900;margin:8px 0 4px}canvas{display:block;margin:auto;width:auto;height:auto;max-width:calc(100vw - 320px);max-height:calc(100vh - 24px);background:#020617;border:1px solid rgba(148,163,184,.25);border-radius:28px;box-shadow:inset 0 0 60px rgba(56,189,248,.08),0 0 55px rgba(56,189,248,.16)}@media(max-width:850px){body{overflow:auto;padding:16px}#wrap{flex-direction:column;width:100%}#ui{width:min(620px,100%);max-height:none}canvas{width:min(100%,900px)}} 
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="ui">
+    <h1>Liquid Snake</h1>
+    <div class="stat">
+      <div class="box"><span>Score</span><b id="score">0</b></div>
+      <div class="box"><span>Best</span><b id="best">0</b></div>
+    </div>
+    <button id="start">Start</button>
+    <button id="pause">Pause</button>
+    <button id="reset">Reset</button>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="general">General</button>
+      <button class="tab-btn" data-tab="snake">Snake</button>
+      <button class="tab-btn" data-tab="food">Food</button>
+      <button class="tab-btn" data-tab="keybinds">Keybinds</button>
+    </div>
+
+    <section class="tab-panel active" id="tab-general">
+      <h3>Board</h3>
+      <select id="boardPreset">
+        <option value="20x20">Classic 20 × 20</option>
+        <option value="24x24">Large 24 × 24</option>
+        <option value="30x24">Wide 30 × 24</option>
+        <option value="32x32">Huge 32 × 32</option>
+        <option value="custom">Custom</option>
+      </select>
+      <div class="setting-row">
+        <div class="box"><span>Width</span><input id="gridWidth" type="number" min="8" max="50" value="20"></div>
+        <div class="box"><span>Height</span><input id="gridHeight" type="number" min="8" max="50" value="20"></div>
+      </div>
+      <button id="applyBoard">Apply Board Settings</button>
+      <div class="box">
+        <span>Mode</span>
+        <label class="check-row"><input id="infiniteMode" type="checkbox"> Infinite walls</label>
+      </div>
+    </section>
+
+    <section class="tab-panel" id="tab-snake">
+      <h3>Snake</h3>
+      <div class="box"><span>Snake Color</span><input id="snakeColor" type="color" value="#22c55e"></div>
+      <div class="box"><span>Speed Preset</span>
+        <select id="speedPreset">
+          <option value="7">Slow — 7 GU/s</option>
+          <option value="10" selected>Normal — 10 GU/s</option>
+          <option value="14">Fast — 14 GU/s</option>
+          <option value="18">Wild — 18 GU/s</option>
+          <option value="custom">Custom</option>
+        </select>
+      </div>
+      <div class="box"><span>Custom Speed GU/s</span><input id="customSpeed" type="number" min="1" max="40" step="0.5" value="10"></div>
+      <button id="applySpeed">Apply Speed</button>
+    </section>
+
+    <section class="tab-panel" id="tab-food">
+      <h3>Food</h3>
+      <div class="box"><span>Food Count</span><input id="foodCount" type="number" min="1" value="1"></div>
+      <div class="box"><span>Food Color</span><input id="foodColor" type="color" value="#facc15"></div>
+      <button id="applyFood">Apply Food Settings</button>
+      <button id="defaultColors">Reset Food/Snake Colors</button>
+    </section>
+
+    <section class="tab-panel" id="tab-keybinds">
+      <h3>Keybinds</h3>
+      <div id="controls"></div>
+      <button id="defaults">Reset Controls</button>
+      <div class="hint">Click a control button, then press the key you want. Defaults are Arrow keys and WASD. Space pauses.</div>
+    </section>
+  </div>
+  <canvas id="game" width="700" height="700"></canvas>
+</div>
+<div class="overlay" id="gameOverOverlay">
+  <div class="popup">
+    <h2>Game Over</h2>
+    <p>Final Score</p>
+    <div class="big-score" id="finalScore">0</div>
+    <p>Press Space or click below to continue.</p>
+    <button id="closeGameOver">Continue</button>
+  </div>
+</div>
+
+<script>
+const canvas=document.getElementById('game');
+const ctx=canvas.getContext('2d');
+const scoreEl=document.getElementById('score');
+const bestEl=document.getElementById('best');
+const controlsDiv=document.getElementById('controls');
+const speedPresetEl=document.getElementById('speedPreset');
+const customSpeedEl=document.getElementById('customSpeed');
+const snakeColorEl=document.getElementById('snakeColor');
+const foodColorEl=document.getElementById('foodColor');
+const boardPresetEl=document.getElementById('boardPreset');
+const gridWidthEl=document.getElementById('gridWidth');
+const gridHeightEl=document.getElementById('gridHeight');
+const foodCountEl=document.getElementById('foodCount');
+const infiniteModeEl=document.getElementById('infiniteMode');
+const gameOverOverlay=document.getElementById('gameOverOverlay');
+const finalScoreEl=document.getElementById('finalScore');
+const closeGameOverBtn=document.getElementById('closeGameOver');
+
+const cell=35;
+const snakeRadius=13;
+const foodRadius=10;
+const defaultControls={up:['ArrowUp','KeyW'],down:['ArrowDown','KeyS'],left:['ArrowLeft','KeyA'],right:['ArrowRight','KeyD']};
+const defaultColors={snake:'#22c55e',food:'#facc15'};
+const smoothness=18;
+
+let gridCols=Number(localStorage.getItem('smoothSnakeGridCols')||20);
+let gridRows=Number(localStorage.getItem('smoothSnakeGridRows')||20);
+let desiredFoodCount=Number(localStorage.getItem('smoothSnakeFoodCount')||1);
+let snakeSpeed=Number(localStorage.getItem('smoothSnakeSpeed')||10);
+let W=gridCols*cell,H=gridRows*cell;
+let controls=loadControls();
+let listening=null;
+let running=false,paused=false,dead=false;
+let score=0,best=Number(localStorage.getItem('smoothSnakeBest')||0);
+let snake,prevSnake,visualHead,dir,nextDir,queuedDirs,foods,lastMove,lastTime,animationId,moveProgress=0,grewThisStep=false;
+let snakeColor=localStorage.getItem('smoothSnakeColor')||defaultColors.snake;
+let foodColor=localStorage.getItem('smoothFoodColor')||defaultColors.food;
+let infiniteMode=localStorage.getItem('smoothSnakeInfiniteMode')==='true';
+
+bestEl.textContent=best;
+snakeColorEl.value=snakeColor;
+foodColorEl.value=foodColor;
+gridWidthEl.value=gridCols;
+gridHeightEl.value=gridRows;
+foodCountEl.value=desiredFoodCount;
+infiniteModeEl.checked=infiniteMode;
+customSpeedEl.value=snakeSpeed;
+setSpeedPresetFromValue();
+setMatchingPreset();
+applyCanvasSize();
+updateFoodCap();
+
+for(const btn of document.querySelectorAll('.tab-btn')){
+ btn.onclick=()=>{
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+ };
+}
+
+snakeColorEl.oninput=()=>{snakeColor=snakeColorEl.value;localStorage.setItem('smoothSnakeColor',snakeColor);draw();};
+foodColorEl.oninput=()=>{foodColor=foodColorEl.value;localStorage.setItem('smoothFoodColor',foodColor);draw();};
+document.getElementById('defaultColors').onclick=()=>{
+ snakeColor=defaultColors.snake;foodColor=defaultColors.food;
+ snakeColorEl.value=snakeColor;foodColorEl.value=foodColor;
+ localStorage.setItem('smoothSnakeColor',snakeColor);
+ localStorage.setItem('smoothFoodColor',foodColor);
+ draw();
+};
+
+speedPresetEl.onchange=()=>{
+ if(speedPresetEl.value!=='custom')customSpeedEl.value=speedPresetEl.value;
+};
+document.getElementById('applySpeed').onclick=()=>{
+ snakeSpeed=clampNumber(customSpeedEl.value,1,40);
+ customSpeedEl.value=snakeSpeed;
+ localStorage.setItem('smoothSnakeSpeed',snakeSpeed);
+ setSpeedPresetFromValue();
+};
+function setSpeedPresetFromValue(){
+ const value=String(snakeSpeed);
+ speedPresetEl.value=[...speedPresetEl.options].some(o=>o.value===value)?value:'custom';
+}
+
+boardPresetEl.onchange=()=>{
+ if(boardPresetEl.value==='custom')return;
+ const [w,h]=boardPresetEl.value.split('x').map(Number);
+ gridWidthEl.value=w;
+ gridHeightEl.value=h;
+ updateFoodCap();
+};
+gridWidthEl.oninput=()=>{boardPresetEl.value='custom';updateFoodCap();};
+gridHeightEl.oninput=()=>{boardPresetEl.value='custom';updateFoodCap();};
+foodCountEl.oninput=updateFoodCap;
+document.getElementById('applyBoard').onclick=()=>{applyBoardSettings();};
+document.getElementById('applyFood').onclick=()=>{applyFoodSettings();};
+infiniteModeEl.onchange=()=>{infiniteMode=infiniteModeEl.checked;localStorage.setItem('smoothSnakeInfiniteMode',String(infiniteMode));};
+closeGameOverBtn.onclick=()=>{hideGameOver();};
+
+function loadControls(){
+ try{const saved=JSON.parse(localStorage.getItem('snakeControls'));if(saved)return saved;}catch(e){}
+ return JSON.parse(JSON.stringify(defaultControls));
+}
+function saveControls(){localStorage.setItem('snakeControls',JSON.stringify(controls));}
+function keyName(k){const n={ArrowUp:'↑',ArrowDown:'↓',ArrowLeft:'←',ArrowRight:'→',Space:'Space'};if(n[k])return n[k];if(k.startsWith('Key'))return k.slice(3);if(k.startsWith('Digit'))return k.slice(5);return k;}
+function renderControls(){
+ controlsDiv.innerHTML='';
+ for(const dirName of ['up','down','left','right']){
+  const row=document.createElement('div');
+  row.innerHTML='<b>'+dirName.charAt(0).toUpperCase()+dirName.slice(1)+'</b>';
+  const wrap=document.createElement('div');wrap.className='bind';
+  controls[dirName].forEach((k,i)=>{
+   const btn=document.createElement('button');
+   btn.textContent=listening&&listening.dir===dirName&&listening.i===i?'Press...':keyName(k);
+   btn.className=listening&&listening.dir===dirName&&listening.i===i?'listening':'';
+   btn.onclick=()=>{listening={dir:dirName,i};renderControls();};
+   wrap.appendChild(btn);
+  });
+  row.appendChild(wrap);controlsDiv.appendChild(row);
+ }
+}
+renderControls();
+
+document.getElementById('defaults').onclick=()=>{controls=JSON.parse(JSON.stringify(defaultControls));saveControls();renderControls();};
+
+function clampNumber(value,min,max){return Math.max(min,Math.min(max,Number(value)||min));}
+function foodCap(cols=gridCols,rows=gridRows){return Math.max(1,Math.floor((cols*rows)/2));}
+function updateFoodCap(){
+ const cols=clampNumber(gridWidthEl.value,8,50);
+ const rows=clampNumber(gridHeightEl.value,8,50);
+ const cap=foodCap(cols,rows);
+ foodCountEl.max=cap;
+ foodCountEl.value=clampNumber(foodCountEl.value,1,cap);
+}
+function setMatchingPreset(){
+ const v=gridCols+'x'+gridRows;
+ boardPresetEl.value=[...boardPresetEl.options].some(o=>o.value===v)?v:'custom';
+}
+function applyCanvasSize(){
+ W=gridCols*cell;
+ H=gridRows*cell;
+ canvas.width=W;
+ canvas.height=H;
+ const availableW=window.innerWidth-320;
+ const availableH=window.innerHeight-24;
+ const scale=Math.min(availableW/W,availableH/H);
+ canvas.style.width=(W*scale)+'px';
+ canvas.style.height=(H*scale)+'px';
+}
+function applyBoardSettings(){
+ gridCols=clampNumber(gridWidthEl.value,8,50);
+ gridRows=clampNumber(gridHeightEl.value,8,50);
+ desiredFoodCount=clampNumber(foodCountEl.value,1,foodCap(gridCols,gridRows));
+ gridWidthEl.value=gridCols;
+ gridHeightEl.value=gridRows;
+ foodCountEl.value=desiredFoodCount;
+ localStorage.setItem('smoothSnakeGridCols',gridCols);
+ localStorage.setItem('smoothSnakeGridRows',gridRows);
+ localStorage.setItem('smoothSnakeFoodCount',desiredFoodCount);
+ setMatchingPreset();
+ applyCanvasSize();
+ cancelAnimationFrame(animationId);
+ reset();
+}
+function applyFoodSettings(){
+ desiredFoodCount=clampNumber(foodCountEl.value,1,foodCap());
+ foodCountEl.value=desiredFoodCount;
+ localStorage.setItem('smoothSnakeFoodCount',desiredFoodCount);
+ spawnFoods();
+ draw();
+}
+
+function gridToPixel(p){return{x:p.x*cell+cell/2,y:p.y*cell+cell/2};}
+function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y);}
+
+function reset(){
+ score=0;dead=false;paused=false;running=false;
+ dir={x:1,y:0,name:'right'};
+ nextDir={...dir};
+ queuedDirs=[];
+ const startX=Math.max(5,Math.floor(gridCols/2));
+ const startY=Math.floor(gridRows/2);
+ snake=[];
+ for(let i=0;i<5;i++)snake.push({x:startX-i,y:startY});
+ prevSnake=snake.map(p=>({...p}));
+ visualHead=gridToPixel(snake[0]);
+ lastMove=0;
+ grewThisStep=false;
+ spawnFoods();
+ updateStats();
+ draw();
+}
+function start(){reset();running=true;lastTime=performance.now();cancelAnimationFrame(animationId);animationId=requestAnimationFrame(loop);}
+function updateStats(){scoreEl.textContent=score;bestEl.textContent=best;}
+function isSnakeCell(spot){return snake&&snake.some(p=>p.x===spot.x&&p.y===spot.y);}
+function isFoodCell(spot){return foods&&foods.some(f=>f.x===spot.x&&f.y===spot.y);}
+function randomOpenCell(){
+ const total=gridCols*gridRows;
+ for(let tries=0;tries<total*2;tries++){
+  const spot={x:Math.floor(Math.random()*gridCols),y:Math.floor(Math.random()*gridRows)};
+  if(!isSnakeCell(spot)&&!isFoodCell(spot))return spot;
+ }
+ for(let y=0;y<gridRows;y++)for(let x=0;x<gridCols;x++){
+  const spot={x,y};
+  if(!isSnakeCell(spot)&&!isFoodCell(spot))return spot;
+ }
+ return null;
+}
+function spawnFoods(){
+ foods=[];
+ const amount=clampNumber(desiredFoodCount,1,foodCap());
+ desiredFoodCount=amount;
+ foodCountEl.value=amount;
+ for(let i=0;i<amount;i++)spawnOneFood();
+}
+function spawnOneFood(){
+ const spot=randomOpenCell();
+ if(spot)foods.push(spot);
+}
+
+function loop(now){
+ if(!running||paused)return;
+ const dt=Math.min((now-lastTime)/1000,.04);
+ lastTime=now;
+ update(dt);
+ draw();
+ animationId=requestAnimationFrame(loop);
+}
+
+function update(dt){
+ const moveDelay=1000/snakeSpeed;
+ lastMove+=dt*1000;
+ while(lastMove>=moveDelay&&running){
+  lastMove-=moveDelay;
+  stepGrid();
+ }
+ moveProgress=Math.min(1,lastMove/moveDelay);
+}
+
+function stepGrid(){
+ prevSnake=snake.map(p=>({...p}));
+
+ dir=nextDir;
+
+ if(queuedDirs.length){
+  const queued=queuedDirs.shift();
+
+  // Safety check before applying queued input
+  if(!(queued.x===-dir.x&&queued.y===-dir.y)){
+   nextDir=queued;
+  }
+ }
+ 
+ let newHead={x:snake[0].x+dir.x,y:snake[0].y+dir.y}; if(infiniteMode){
+  newHead={x:(newHead.x+gridCols)%gridCols,y:(newHead.y+gridRows)%gridRows};
+ }else if(newHead.x<0||newHead.x>=gridCols||newHead.y<0||newHead.y>=gridRows){
+  gameOver();return;
+ }
+ if(snake.some(p=>p.x===newHead.x&&p.y===newHead.y)){gameOver();return;}
+ snake.unshift(newHead);
+ const eatenIndex=foods.findIndex(f=>f.x===newHead.x&&f.y===newHead.y);
+ if(eatenIndex!==-1){
+  grewThisStep=true;
+  score+=10;
+  foods.splice(eatenIndex,1);
+  spawnOneFood();
+  updateStats();
+ }else{
+  grewThisStep=false;
+  snake.pop();
+ }
+}
+
+function gameOver(){
+ running=false;dead=true;
+ if(score>best){best=score;localStorage.setItem('smoothSnakeBest',best);}
+ updateStats();
+ draw();
+ showGameOver();
+}
+function showGameOver(){
+ finalScoreEl.textContent=score;
+ gameOverOverlay.classList.add('show');
+}
+function hideGameOver(){
+ gameOverOverlay.classList.remove('show');
+ dead=false;
+ draw();
+}
+
+function draw(){
+ ctx.clearRect(0,0,W,H);
+ drawGrid();
+ drawFood();
+ drawSnake();
+ if(!running&&!dead){drawCenterText('Smooth Snake','Press Start');}
+ if(paused){drawCenterText('Paused','Press Space or Pause');}
+}
+function drawGrid(){
+ ctx.save();ctx.strokeStyle='rgba(148,163,184,.055)';ctx.lineWidth=1;
+ for(let x=0;x<=W;x+=cell){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+ for(let y=0;y<=H;y+=cell){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+ ctx.restore();
+}
+function drawFood(){
+ const pulse=1+Math.sin(performance.now()/130)*.12;
+ ctx.save();ctx.shadowColor=foodColor;ctx.shadowBlur=25;ctx.fillStyle=foodColor;
+ for(const food of foods){
+  const p=gridToPixel(food);
+  ctx.beginPath();ctx.arc(p.x,p.y,foodRadius*pulse,0,Math.PI*2);ctx.fill();
+ }
+ ctx.restore();
+}
+function drawSnake(){
+ if(snake.length<2)return;
+ const eased=running&&!paused?smoothStep(moveProgress):1;
+ const headProgress=running&&!paused?moveProgress:1;
+ const prevHead=prevSnake&&prevSnake[0]?gridToPixel(prevSnake[0]):gridToPixel(snake[0]);
+ const currentHead=gridToPixel(snake[0]);
+ visualHead={
+  x:prevHead.x+(currentHead.x-prevHead.x)*headProgress,
+  y:prevHead.y+(currentHead.y-prevHead.y)*headProgress
+ };
+
+ const rawPath=[visualHead,...snake.slice(1).map(gridToPixel)];
+ if(!grewThisStep&&prevSnake&&prevSnake.length){
+  rawPath.push(gridToPixel(prevSnake[prevSnake.length-1]));
+ }
+ const wantedLength=(snake.length-1)*cell;
+ const points=[rawPath[0]];
+ let used=0;
+
+ for(let i=1;i<rawPath.length;i++){
+  const a=rawPath[i-1];
+  const b=rawPath[i];
+  const segmentLength=dist(a,b);
+  if(segmentLength===0)continue;
+
+  if(used+segmentLength>=wantedLength){
+   const remaining=wantedLength-used;
+   const t=remaining/segmentLength;
+   points.push({
+    x:a.x+(b.x-a.x)*t,
+    y:a.y+(b.y-a.y)*t
+   });
+   break;
+  }
+
+  points.push(b);
+  used+=segmentLength;
+ }
+
+ ctx.save();
+ ctx.lineWidth=snakeRadius*2;
+ ctx.lineJoin='round';
+ ctx.lineCap='round';
+ ctx.shadowColor=snakeColor;
+ ctx.shadowBlur=18;
+ ctx.strokeStyle=snakeColor;
+ ctx.beginPath();
+ ctx.moveTo(points[0].x,points[0].y);
+ for(let i=1;i<points.length;i++){
+  ctx.lineTo(points[i].x,points[i].y);
+ }
+ ctx.stroke();
+ drawFace();
+ ctx.restore();
+}
+function smoothStep(t){return t*t*(3-2*t);}
+function drawFace(){
+ const hx=visualHead.x,hy=visualHead.y;
+ const eyeOffsetForward=8,eyeOffsetSide=6;
+ const fx=dir.x,fy=dir.y,sx=-dir.y,sy=dir.x;
+ const eyes=[-1,1].map(side=>({x:hx+fx*eyeOffsetForward+sx*eyeOffsetSide*side,y:hy+fy*eyeOffsetForward+sy*eyeOffsetSide*side}));
+ ctx.fillStyle='#052e16';
+ for(const e of eyes){ctx.beginPath();ctx.arc(e.x,e.y,2.8,0,Math.PI*2);ctx.fill();}
+}
+function drawCenterText(title,sub){
+ ctx.save();ctx.fillStyle='rgba(2,6,23,.62)';ctx.fillRect(0,0,W,H);ctx.textAlign='center';ctx.fillStyle='#e5f0ff';ctx.font='800 48px system-ui';ctx.fillText(title,W/2,H/2-12);ctx.fillStyle='#94a3b8';ctx.font='600 22px system-ui';ctx.fillText(sub,W/2,H/2+28);ctx.restore();
+}
+
+function setDirection(d){
+ const map={
+  up:{x:0,y:-1,name:'up'},
+  down:{x:0,y:1,name:'down'},
+  left:{x:-1,y:0,name:'left'},
+  right:{x:1,y:0,name:'right'}
+ };
+
+ const wanted=map[d];
+
+ // First input can apply immediately, but only if it is not opposite of actual current movement
+ if(!queuedDirs.length && nextDir.name===dir.name){
+  if(wanted.x===-dir.x&&wanted.y===-dir.y)return;
+  if(wanted.name===dir.name)return;
+
+  nextDir=wanted;
+  return;
+ }
+
+ // Extra inputs queue after the current planned direction
+ const lastPlanned=queuedDirs.length?queuedDirs[queuedDirs.length-1]:nextDir;
+
+ if(wanted.x===-lastPlanned.x&&wanted.y===-lastPlanned.y)return;
+ if(wanted.name===lastPlanned.name)return;
+
+ queuedDirs.push(wanted);
+
+ if(queuedDirs.length>3)queuedDirs.shift();
+}
+
+document.addEventListener('keydown',e=>{
+ if(listening){
+  e.preventDefault();controls[listening.dir][listening.i]=e.code;saveControls();listening=null;renderControls();return;
+ }
+ if(e.code==='Space'){
+  e.preventDefault();
+  if(gameOverOverlay.classList.contains('show')){hideGameOver();return;}
+  if(!running&&!dead){start();return;}
+  togglePause();return;
+ }
+ for(const d in controls){if(controls[d].includes(e.code)){e.preventDefault();setDirection(d);}}
+});
+function togglePause(){
+ if(!running||dead)return;
+ paused=!paused;
+ document.getElementById('pause').textContent=paused?'Resume':'Pause';
+ if(!paused){lastTime=performance.now();animationId=requestAnimationFrame(loop);}else draw();
+}
+document.getElementById('start').onclick=start;
+document.getElementById('pause').onclick=togglePause;
+document.getElementById('reset').onclick=()=>{cancelAnimationFrame(animationId);reset();};
+window.addEventListener('resize',()=>{applyCanvasSize();draw();});
+
+reset();
+</script>
+</body>
+</html>

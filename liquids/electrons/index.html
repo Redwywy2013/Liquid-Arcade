@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Liquid Electrons v2</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 20% 20%,#143454,#07111f 45%,#020617);color:#e5f0ff;font-family:system-ui,sans-serif;display:flex;justify-content:center;align-items:stretch;min-height:100vh;overflow:hidden}
+#wrap{display:flex;gap:22px;align-items:center;justify-content:center;width:100vw;height:100vh;padding:12px}
+#ui{width:280px;flex:0 0 280px;align-self:center;background:rgba(15,23,42,.78);border:1px solid rgba(148,163,184,.25);border-radius:24px;padding:18px;box-shadow:0 20px 70px rgba(0,0,0,.45);backdrop-filter:blur(12px);max-height:calc(100vh - 24px);overflow:auto;scrollbar-width:thin}
+h1{margin:0 0 14px;font-size:30px;letter-spacing:-.04em}.stat{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}.box{background:rgba(2,6,23,.45);border:1px solid rgba(148,163,184,.16);border-radius:16px;padding:12px;margin-top:8px}.box span{display:block;color:#94a3b8;font-size:12px;text-transform:uppercase;letter-spacing:.07em}.box b{font-size:24px}
+button,select,input{width:100%;margin-top:8px;padding:10px;border-radius:12px;border:1px solid #475569;background:#111827;color:white;font-weight:800;cursor:pointer}input[type="color"]{height:42px;padding:4px}input[type="range"]{padding:0;accent-color:#38bdf8}input[type="number"],input[type="text"]{cursor:text}
+.range-pair{display:grid;grid-template-columns:1fr 78px;gap:8px;align-items:center}.range-pair input{margin-top:8px}.range-pair input[type="number"]{padding:8px;font-size:12px}
+button:hover{filter:brightness(1.15)}#play{background:linear-gradient(135deg,#0ea5e9,#22c55e);border:0}.danger{background:linear-gradient(135deg,#ef4444,#f97316);border:0}.mini{font-size:12px;padding:8px}
+.tabs{display:flex;gap:0;margin:14px -10px 14px;padding:0 6px;overflow-x:auto}.tab-btn{position:relative;margin:0 -1px -1px 0;padding:9px 8px;font-size:11px;border-radius:12px 12px 0 0;border:1px solid rgba(148,163,184,.22);border-bottom-color:rgba(148,163,184,.22);background:rgba(15,23,42,.55);color:#94a3b8;box-shadow:none;min-width:62px}.tab-btn:hover{filter:none;background:rgba(30,41,59,.8);color:#e5f0ff}.tab-btn.active{z-index:2;background:rgba(15,23,42,.96);border-color:rgba(148,163,184,.32);border-bottom-color:rgba(15,23,42,.96);color:#e5f0ff}.tab-panel{display:none}.tab-panel.active{display:block}
+h3{margin:10px 0 8px}.hint{color:#94a3b8;font-size:13px;line-height:1.4;margin-top:12px}.check-row{display:flex;align-items:center;gap:10px;margin-top:8px;color:#e5f0ff;font-weight:800}.check-row input{width:auto;margin:0;accent-color:#22c55e}.value{float:right;color:#e5f0ff;font-weight:900}.selected{font-size:13px;line-height:1.45;color:#cbd5e1}.selected strong{color:#fff}
+canvas{display:block;margin:auto;background:#020617;border:1px solid rgba(148,163,184,.25);border-radius:28px;box-shadow:inset 0 0 60px rgba(56,189,248,.08),0 0 55px rgba(56,189,248,.16);cursor:crosshair;touch-action:none}
+#dragGhost{position:fixed;left:0;top:0;z-index:9999;pointer-events:none;display:none;transform:translate(-50%,-50%) scale(.9);filter:drop-shadow(0 0 22px rgba(56,189,248,.9));opacity:.92}
+.drawer{position:fixed;left:320px;right:12px;bottom:12px;z-index:8;background:rgba(15,23,42,.78);border:1px solid rgba(148,163,184,.25);border-radius:24px;padding:12px;box-shadow:0 20px 70px rgba(0,0,0,.45);backdrop-filter:blur(12px)}.drawer-tabs{display:flex;gap:0;margin:0 0 10px;padding:0 6px;overflow-x:auto}.drawer-tab{position:relative;margin:0 -1px -1px 0;padding:9px 12px;font-size:11px;border-radius:12px 12px 0 0;border:1px solid rgba(148,163,184,.22);background:rgba(15,23,42,.55);color:#94a3b8;box-shadow:none;width:auto}.drawer-tab.active{z-index:2;background:rgba(15,23,42,.96);border-color:rgba(148,163,184,.32);color:#e5f0ff}.parts{display:flex;gap:10px;overflow-x:auto;padding:2px 4px 4px}.part-card{width:104px;flex:0 0 104px;height:82px;background:rgba(2,6,23,.45);border:1px solid rgba(148,163,184,.16);border-radius:16px;padding:8px;text-align:center;cursor:grab}.part-card:active{cursor:grabbing}.part-card span{display:block;color:#94a3b8;font-size:11px;font-weight:800;margin-top:4px}.part-icon{height:42px;display:flex;align-items:center;justify-content:center}
+.modal{position:fixed;right:12px;top:12px;bottom:12px;width:300px;display:block;z-index:20;transform:translateX(calc(100% + 28px));opacity:0;pointer-events:none;transition:transform .38s cubic-bezier(.2,.9,.2,1),opacity .25s ease}.modal.show{transform:translateX(0);opacity:1;pointer-events:auto}.editor{height:100%;background:rgba(15,23,42,.86);border:1px solid rgba(148,163,184,.28);border-radius:24px;padding:18px;box-shadow:0 20px 70px rgba(0,0,0,.45);backdrop-filter:blur(12px);overflow:auto;scrollbar-width:thin}.editor h2{margin:0 0 10px;font-size:28px;letter-spacing:-.04em}.editor small{color:#94a3b8}
+@media(max-width:900px){body{overflow:auto;padding:16px}#wrap{flex-direction:column;width:100%;height:auto}#ui{width:min(680px,100%);max-height:none}canvas{width:min(100%,900px)!important;height:auto!important}.drawer{left:12px}.modal{right:12px;left:12px;width:auto}}
+
+.editor-field-hidden{display:none!important}
+
+
+/* Mobile landscape / compact mode */
+@media (orientation:landscape) and (max-height:620px){
+  body{
+    overflow:hidden;
+    padding:6px;
+  }
+
+  #wrap{
+    width:100vw;
+    height:100vh;
+    padding:6px;
+    gap:8px;
+    align-items:stretch;
+    justify-content:flex-start;
+  }
+
+  #ui{
+    width:220px;
+    flex:0 0 220px;
+    padding:10px;
+    border-radius:18px;
+    max-height:calc(100vh - 92px);
+    align-self:flex-start;
+  }
+
+  h1{
+    font-size:22px;
+    margin-bottom:8px;
+  }
+
+  .stat{
+    gap:6px;
+    margin:8px 0;
+  }
+
+  .box{
+    padding:8px;
+    border-radius:12px;
+    margin-top:6px;
+  }
+
+  .box span{
+    font-size:10px;
+  }
+
+  .box b{
+    font-size:18px;
+  }
+
+  button,select,input{
+    padding:7px;
+    margin-top:5px;
+    border-radius:10px;
+    font-size:12px;
+  }
+
+  .tabs{
+    margin:8px -6px 8px;
+    padding:0 4px;
+  }
+
+  .tab-btn{
+    min-width:48px;
+    font-size:10px;
+    padding:7px 6px;
+  }
+
+  h3{
+    font-size:14px;
+    margin:6px 0;
+  }
+
+  .hint,.selected{
+    font-size:11px;
+    line-height:1.25;
+  }
+
+  .range-pair{
+    grid-template-columns:1fr 56px;
+    gap:5px;
+  }
+
+  .range-pair input[type="number"]{
+    font-size:10px;
+    padding:6px;
+  }
+
+  canvas{
+    flex:1 1 auto;
+    max-width:calc(100vw - 242px);
+    max-height:calc(100vh - 92px);
+    border-radius:20px;
+  }
+
+  .drawer{
+    left:6px;
+    right:6px;
+    bottom:6px;
+    padding:7px;
+    border-radius:18px;
+  }
+
+  .drawer-tabs{
+    margin-bottom:5px;
+    padding:0 4px;
+  }
+
+  .drawer-tab{
+    font-size:10px;
+    padding:6px 8px;
+  }
+
+  .parts{
+    gap:6px;
+    padding:1px 2px 2px;
+  }
+
+  .part-card{
+    width:78px;
+    flex-basis:78px;
+    height:58px;
+    border-radius:12px;
+    padding:5px;
+  }
+
+  .part-icon{
+    height:28px;
+  }
+
+  .part-icon svg{
+    width:58px;
+    height:31px;
+  }
+
+  .part-card span{
+    font-size:9px;
+    margin-top:2px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  .modal{
+    top:6px;
+    right:6px;
+    bottom:82px;
+    width:240px;
+  }
+
+  .editor{
+    border-radius:18px;
+    padding:10px;
+  }
+
+  .editor h2{
+    font-size:22px;
+  }
+
+  .editor small{
+    font-size:11px;
+  }
+}
+
+/* Very narrow landscape phones */
+@media (orientation:landscape) and (max-height:480px){
+  #ui{
+    width:190px;
+    flex-basis:190px;
+    padding:8px;
+    max-height:calc(100vh - 78px);
+  }
+
+  h1{
+    font-size:19px;
+  }
+
+  .stat{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .box b{
+    font-size:16px;
+  }
+
+  .tab-btn{
+    min-width:43px;
+    font-size:9px;
+    padding:6px 4px;
+  }
+
+  canvas{
+    max-width:calc(100vw - 208px);
+    max-height:calc(100vh - 78px);
+  }
+
+  .drawer{
+    padding:5px;
+  }
+
+  .drawer-tab{
+    font-size:9px;
+    padding:5px 7px;
+  }
+
+  .part-card{
+    width:70px;
+    flex-basis:70px;
+    height:50px;
+    padding:4px;
+  }
+
+  .part-icon{
+    height:24px;
+  }
+
+  .part-icon svg{
+    width:50px;
+    height:27px;
+  }
+
+  .part-card span{
+    font-size:8px;
+  }
+
+  button,select,input{
+    padding:6px;
+    font-size:11px;
+  }
+}
+
+/* Mobile portrait fallback keeps the packed layout readable */
+@media (orientation:portrait) and (max-width:700px){
+  body{
+    overflow:auto;
+    padding:8px;
+  }
+
+  #wrap{
+    flex-direction:column;
+    height:auto;
+    padding:6px;
+    gap:8px;
+  }
+
+  #ui{
+    width:100%;
+    flex:auto;
+    max-height:none;
+    padding:12px;
+  }
+
+  canvas{
+    width:100%!important;
+    height:auto!important;
+    max-width:100%!important;
+    max-height:none;
+  }
+
+  .drawer{
+    position:sticky;
+    left:auto;
+    right:auto;
+    bottom:0;
+    width:100%;
+    margin-top:8px;
+  }
+}
+
+#youtubeHost{position:fixed;right:12px;bottom:160px;width:320px;height:180px;z-index:7;display:none;border-radius:18px;overflow:hidden;border:1px solid rgba(148,163,184,.25);box-shadow:0 20px 70px rgba(0,0,0,.45)}#youtubeHost iframe{width:100%;height:100%;border:0}
+
+
+/* Prevent selecting labels/icons while dragging parts and components */
+.part-card,
+.part-card *,
+.part-icon,
+.part-icon *,
+#dragGhost,
+#dragGhost *,
+canvas {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="ui">
+    <h1>Liquid Electrons</h1>
+    <div class="stat">
+      <div class="box"><span>Parts</span><b id="partCount">0</b></div>
+      <div class="box"><span>Wires</span><b id="wireCount">0</b></div>
+    </div>
+    <button id="play">Run</button>
+    <button id="pause">Pause</button>
+    <button id="sample">Sample Circuit</button>
+    <button id="clear" class="danger">Clear</button>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="general">General</button>
+      <button class="tab-btn" data-tab="view">View</button>
+      <button class="tab-btn" data-tab="audio">Audio</button>
+      <button class="tab-btn" data-tab="presets">Presets</button>
+      <button class="tab-btn" data-tab="help">Help</button>
+    </div>
+
+    <section class="tab-panel active" id="tab-general">
+      <h3>Simulation</h3>
+      <div class="box">
+        <span>Speed <em class="value" id="speedVal">1x</em></span>
+        <div class="range-pair">
+          <input id="speed" type="range" min="0.1" max="5" step="0.1" value="1">
+          <input id="speedNum" type="number" min="0.1" max="5" step="0.1" value="1">
+        </div>
+      </div>
+      <label class="check-row"><input id="currentOn" type="checkbox" checked> Show current flow</label>
+      <label class="check-row"><input id="burnoutOn" type="checkbox" checked> Burnout enabled</label>
+      <div class="box selected" id="selectedInfo"><strong>Selected:</strong><br>None</div>
+    </section>
+
+    <section class="tab-panel" id="tab-view">
+      <h3>View</h3>
+      <label class="check-row"><input id="labelsOn" type="checkbox" checked> Labels</label>
+      <label class="check-row"><input id="terminalLabelsOn" type="checkbox"> Terminal labels</label>
+      <div class="box">
+        <span>Zoom <em class="value" id="zoomVal">1.00</em></span>
+        <div class="range-pair">
+          <input id="zoom" type="range" min="0.05" max="8" step="0.01" value="1">
+          <input id="zoomNum" type="number" min="0.01" max="100" step="0.01" value="1">
+        </div>
+      </div>
+      <button id="centerCam">Center Camera</button>
+    </section>
+
+    <section class="tab-panel" id="tab-audio">
+      <h3>Audio</h3>
+      <div class="box"><span>Speaker Audio Upload</span><input id="audioUpload" type="file" accept="audio/*"></div>
+      <div class="box"><span>Selected Speaker Track</span><select id="speakerTrack"></select></div>
+      <div class="box"><span>YouTube URL</span><input id="youtubeUrl" type="text" placeholder="https://www.youtube.com/watch?v=..."></div>
+      <button id="assignYouTube">Assign YouTube to Selected Speaker</button>
+      <button id="testSpeaker">Test Speaker</button>
+      <button id="stopAllAudio">Stop Audio</button>
+      <div class="hint">Speakers can play uploaded audio when powered. Buzzers generate a tone directly in the browser.</div>
+    </section>
+
+    <section class="tab-panel" id="tab-presets">
+      <h3>Presets</h3>
+      <button class="mini" data-preset="basic-led">Basic LED</button>
+      <button class="mini" data-preset="lcd">LCD Display Demo</button>
+      <button class="mini" data-preset="buzzer">Buzzer Demo</button>
+      <button class="mini" data-preset="speaker">Speaker Demo</button>
+      <button class="mini" data-preset="motor-fan">Motor + Fan</button>
+      <button class="mini" data-preset="fuse-test">Fuse Test</button>
+      <button class="mini" data-preset="solar-fan">Solar Fan</button>
+      <button class="mini" data-preset="open-switch">Open Switch</button>
+      <button class="mini" data-preset="burnout-test">Burnout Test</button>
+      <button class="mini" data-preset="three-load-chain">Three Load Chain</button>
+      <div class="hint">Presets clear the board and load a ready circuit.</div>
+    </section>
+
+    <section class="tab-panel" id="tab-help">
+      <h3>Controls</h3>
+      <div class="hint">Drag parts from the bottom drawer. Left-drag parts to move. Right-drag empty space to pan. Mouse wheel zooms. On mobile, use browser pinch zoom if needed. Select a part and press E to edit. Select a switch/button and press Space to toggle. Hold W, then left-click and drag from one blue terminal to another to place a wire. Circuits only power when there is a closed path from battery + back to battery -. Click wires to select, Delete removes.</div>
+    </section>
+  </div>
+  <canvas id="sim"></canvas>
+</div>
+
+<div id="youtubeHost"></div>
+<div id="dragGhost"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-tabs" id="drawerTabs"></div>
+  <div class="parts" id="parts"></div>
+</div>
+
+<div class="modal" id="editModal">
+  <div class="editor">
+    <h2>Edit Part</h2>
+    <small>Select a component, then press E.</small>
+    <div class="box" id="editNameBox"><span>Name</span><input id="editName" type="text"></div>
+    <div class="box" id="editVoltageBox"><span>Voltage V</span><input id="editVoltage" type="number" step="0.01"></div>
+    <div class="box" id="editResistanceBox"><span>Resistance Ω</span><input id="editResistance" type="number" step="0.01"></div>
+    <div class="box" id="editMaxCurrentBox"><span>Max Current A</span><input id="editMaxCurrent" type="number" step="0.01"></div>
+    <div class="box" id="editColorBox"><span>Color / Glow</span><input id="editColor" type="color"></div>
+    <div class="box" id="editTextBox"><span>Display Text</span><input id="editText" type="text" maxlength="24"></div>
+    <div class="box" id="editFrequencyBox"><span>Tone Frequency Hz</span><input id="editFrequency" type="number" min="20" max="20000" step="1"></div>
+    <div class="box" id="editTrackBox"><span>Speaker Track</span><select id="editTrack"></select></div>
+    <div class="box" id="editYouTubeBox"><span>YouTube URL</span><input id="editYouTube" type="text" placeholder="Optional YouTube URL"></div>
+    <label class="check-row" id="editClosedBox"><input id="editClosed" type="checkbox"> Switch closed</label>
+    <button id="closeEdit">Done</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+const canvas=document.getElementById("sim");
+const ctx=canvas.getContext("2d");
+const $=id=>document.getElementById(id);
+const TAU=Math.PI*2;
+
+let parts=[];
+let wires=[];
+let selected=null;
+let selectedWire=null;
+let running=true;
+let nextId=1;
+let camera={x:0,y:0,zoom:1};
+let panDrag=null;
+let moveDrag=null;
+let drawerDrag=null;
+let wireDrag=null;
+let wDown=false;
+let editing=false;
+let audioCtx=null;
+let masterGain=null;
+let uploadedTracks=[];
+let activeYouTubeSpeaker=null;
+let lastFrame=performance.now();
+
+const settings={speed:1,currentOn:true,burnoutOn:true,labelsOn:true,terminalLabelsOn:false,zoom:1};
+
+const drawerData={
+ batteries:[
+  {name:"AA Battery",kind:"battery",model:"aa",voltage:1.5,resistance:.15,maxCurrent:5,color:"#94a3b8"},
+  {name:"AAA Battery",kind:"battery",model:"aaa",voltage:1.5,resistance:.25,maxCurrent:3,color:"#cbd5e1"},
+  {name:"9V Battery",kind:"battery",model:"9v",voltage:9,resistance:1.5,maxCurrent:.8,color:"#60a5fa"},
+  {name:"Coin Cell",kind:"battery",model:"coin",voltage:3,resistance:10,maxCurrent:.05,color:"#e5e7eb"},
+  {name:"Car Battery",kind:"battery",model:"car",voltage:12,resistance:.02,maxCurrent:400,color:"#111827"},
+  {name:"USB 5V",kind:"battery",model:"usb",voltage:5,resistance:.2,maxCurrent:2,color:"#38bdf8"},
+  {name:"Solar Cell",kind:"battery",model:"solar",voltage:2,resistance:5,maxCurrent:.2,color:"#fde047"},
+  {name:"Potato Battery",kind:"battery",model:"potato",voltage:.8,resistance:60,maxCurrent:.02,color:"#b45309"}
+ ],
+ resistors:[
+  {name:"100Ω",kind:"resistor",model:"resistor",resistance:100,maxCurrent:.25,color:"#f97316"},
+  {name:"220Ω",kind:"resistor",model:"resistor",resistance:220,maxCurrent:.18,color:"#f97316"},
+  {name:"1kΩ",kind:"resistor",model:"resistor",resistance:1000,maxCurrent:.08,color:"#f97316"},
+  {name:"10kΩ",kind:"resistor",model:"resistor",resistance:10000,maxCurrent:.02,color:"#f97316"},
+  {name:"Variable Pot",kind:"resistor",model:"pot",resistance:500,maxCurrent:.2,color:"#fb923c"}
+ ],
+ lights:[
+  {name:"Bulb",kind:"bulb",model:"bulb",resistance:30,maxCurrent:.5,color:"#facc15"},
+  {name:"Red LED",kind:"led",model:"led",resistance:220,maxCurrent:.03,color:"#ef4444"},
+  {name:"Green LED",kind:"led",model:"led",resistance:220,maxCurrent:.03,color:"#22c55e"},
+  {name:"Blue LED",kind:"led",model:"led",resistance:220,maxCurrent:.03,color:"#38bdf8"},
+  {name:"RGB LED",kind:"led",model:"led",resistance:180,maxCurrent:.04,color:"#a78bfa"},
+  {name:"LCD Display",kind:"lcd",model:"lcd",resistance:120,maxCurrent:.3,color:"#67e8f9",text:"HELLO"}
+ ],
+ switches:[
+  {name:"Switch",kind:"switch",model:"switch",resistance:.01,maxCurrent:5,closed:true,color:"#e5f0ff"},
+  {name:"Button",kind:"switch",model:"button",resistance:.01,maxCurrent:3,closed:false,color:"#e5f0ff"},
+  {name:"Ground",kind:"ground",model:"ground",resistance:0,maxCurrent:999,color:"#94a3b8"}
+ ],
+ audio:[
+  {name:"Buzzer",kind:"buzzer",model:"buzzer",resistance:30,maxCurrent:1,color:"#f472b6",frequency:440},
+  {name:"Speaker",kind:"speaker",model:"speaker",resistance:8,maxCurrent:2,color:"#f472b6",track:""},
+  {name:"Piezo Beeper",kind:"buzzer",model:"piezo",resistance:80,maxCurrent:.3,color:"#fb7185",frequency:880},
+  {name:"Siren",kind:"buzzer",model:"siren",resistance:25,maxCurrent:1,color:"#f43f5e",frequency:520}
+ ],
+ motion:[
+  {name:"Motor",kind:"motor",model:"motor",resistance:20,maxCurrent:2,color:"#a78bfa"},
+  {name:"Fan",kind:"fan",model:"fan",resistance:25,maxCurrent:2,color:"#60a5fa"},
+  {name:"Servo",kind:"servo",model:"servo",resistance:18,maxCurrent:2,color:"#c084fc"},
+  {name:"Relay",kind:"relay",model:"relay",resistance:60,maxCurrent:1,color:"#818cf8"}
+ ],
+ modules:[
+  {name:"Capacitor",kind:"capacitor",model:"capacitor",resistance:200,maxCurrent:.2,color:"#22d3ee",charge:0},
+  {name:"Diode",kind:"diode",model:"diode",resistance:100,maxCurrent:.5,color:"#fb7185"},
+  {name:"Fuse",kind:"fuse",model:"fuse",resistance:.5,maxCurrent:.2,color:"#f87171"},
+  {name:"Heater Coil",kind:"heater",model:"coil",resistance:15,maxCurrent:3,color:"#fb923c"},
+  {name:"IC Timer",kind:"timer",model:"chip",resistance:500,maxCurrent:.1,color:"#34d399"},
+  {name:"Logic Gate AND",kind:"logic",model:"and",resistance:200,maxCurrent:.1,color:"#4ade80"},
+  {name:"Logic Gate OR",kind:"logic",model:"or",resistance:200,maxCurrent:.1,color:"#4ade80"},
+  {name:"Microcontroller",kind:"mcu",model:"mcu",resistance:300,maxCurrent:.2,color:"#22c55e",text:"CODE"}
+ ],
+ everyday:[
+  {name:"Spoon",kind:"resistor",model:"spoon",resistance:5,maxCurrent:10,color:"#cbd5e1"},
+  {name:"Coin",kind:"resistor",model:"coinobj",resistance:2,maxCurrent:15,color:"#e5e7eb"},
+  {name:"Paperclip",kind:"resistor",model:"clip",resistance:3,maxCurrent:8,color:"#94a3b8"},
+  {name:"Pencil Graphite",kind:"resistor",model:"pencil",resistance:50,maxCurrent:1,color:"#64748b"},
+  {name:"Aluminum Foil",kind:"resistor",model:"foil",resistance:1,maxCurrent:20,color:"#cbd5e1"},
+  {name:"Salt Water",kind:"resistor",model:"water",resistance:80,maxCurrent:.5,color:"#38bdf8"},
+  {name:"Human Finger",kind:"resistor",model:"finger",resistance:100000,maxCurrent:.005,color:"#fda4af"}
+ ]
+};
+let activeDrawerTab="batteries";
+
+function ensureAudio(){
+ if(audioCtx)return;
+ audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+ masterGain=audioCtx.createGain();
+ masterGain.gain.value=.18;
+ masterGain.connect(audioCtx.destination);
+}
+function screenToWorld(sx,sy){const r=canvas.getBoundingClientRect();return{x:(sx-r.left-canvas.width/2)/camera.zoom+camera.x,y:(sy-r.top-canvas.height/2)/camera.zoom+camera.y};}
+function clamp(v,min,max){return Math.max(min,Math.min(max,Number(v)||min));}
+function fmt(n,u=""){if(!Number.isFinite(n))return"∞"+u;if(Math.abs(n)>=1000)return n.toExponential(2)+u;if(Math.abs(n)<.01&&n!==0)return n.toExponential(2)+u;return Number(n).toFixed(2).replace(/\.00$/,"")+u;}
+function hexToRgba(hex,a){const h=String(hex).replace("#",""),n=parseInt(h,16);return`rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;}
+function terminalsFor(p){if(p.kind==="ground")return[{name:"GND",x:0,y:-28}];return[{name:"A",x:-42,y:0},{name:"B",x:42,y:0}];}
+function terminalWorld(p,t){return{x:p.x+t.x,y:p.y+t.y};}
+function partSize(p){if(p.model==="9v")return{w:58,h:72};if(p.model==="car")return{w:96,h:58};if(p.model==="coin"||p.model==="coinobj")return{w:58,h:58};if(p.model==="usb")return{w:76,h:46};if(p.model==="aaa")return{w:96,h:24};if(p.model==="aa")return{w:116,h:28};if(p.kind==="bulb")return{w:58,h:82};if(p.kind==="led")return{w:54,h:76};if(p.kind==="lcd")return{w:104,h:58};return{w:96,h:42};}
+function makePart(x,y,preset){return{id:nextId++,x,y,kind:preset.kind,model:preset.model||preset.kind,name:preset.name||preset.kind,voltage:Number(preset.voltage||0),resistance:Number(preset.resistance||0),maxCurrent:Number(preset.maxCurrent||1),color:preset.color||"#e5f0ff",closed:preset.closed!==false,current:0,powered:false,burned:false,power:0,text:preset.text||preset.name||"",frequency:preset.frequency||440,track:preset.track||"",youtubeUrl:preset.youtubeUrl||"",charge:preset.charge||0,spin:0,audio:null};}
+function addPart(p){parts.push(p);selected=p;selectedWire=null;updateStats();solveCircuit();draw();return p;}
+function pickPart(p){for(let i=parts.length-1;i>=0;i--){const q=parts[i],s=partSize(q);if(p.x>=q.x-s.w/2&&p.x<=q.x+s.w/2&&p.y>=q.y-s.h/2&&p.y<=q.y+s.h/2)return q;}return null;}
+function pickTerminal(p){let best=null,bd=Infinity;for(const part of parts){for(const t of terminalsFor(part)){const w=terminalWorld(part,t),d=Math.hypot(p.x-w.x,p.y-w.y);if(d<14/camera.zoom+8&&d<bd){best={part,terminal:t,point:w};bd=d;}}}return best;}
+function wirePoint(ref){const p=parts.find(x=>x.id===ref.id);if(!p)return{x:0,y:0};const t=terminalsFor(p).find(t=>t.name===ref.t)||terminalsFor(p)[0];return terminalWorld(p,t);}
+function distToSegment(p,a,b){const dx=b.x-a.x,dy=b.y-a.y,len2=dx*dx+dy*dy;if(len2===0)return Math.hypot(p.x-a.x,p.y-a.y);const t=Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/len2));return Math.hypot(p.x-(a.x+dx*t),p.y-(a.y+dy*t));}
+function pickWire(p){let best=null,bd=Infinity,hit=10/camera.zoom+8;for(let i=wires.length-1;i>=0;i--){const w=wires[i],d=distToSegment(p,wirePoint(w.a),wirePoint(w.b));if(d<hit&&d<bd){best=w;bd=d;}}return best;}
+
+
+function parseYouTubeId(url){
+ const s=String(url||"").trim();
+ if(!s)return "";
+ const patterns=[
+  /(?:youtube\.com\/watch\?v=)([A-Za-z0-9_-]{11})/,
+  /(?:youtu\.be\/)([A-Za-z0-9_-]{11})/,
+  /(?:youtube\.com\/shorts\/)([A-Za-z0-9_-]{11})/,
+  /(?:youtube\.com\/embed\/)([A-Za-z0-9_-]{11})/
+ ];
+ for(const p of patterns){
+  const m=s.match(p);
+  if(m)return m[1];
+ }
+ if(/^[A-Za-z0-9_-]{11}$/.test(s))return s;
+ return "";
+}
+function showYouTubeForSpeaker(p){
+ const id=parseYouTubeId(p.youtubeUrl);
+ const host=$("youtubeHost");
+ if(!id||!host)return;
+ activeYouTubeSpeaker=p;
+ host.style.display="block";
+ host.innerHTML='<iframe allow="autoplay; encrypted-media" allowfullscreen src="https://www.youtube.com/embed/'+id+'?autoplay=1&mute=0&controls=1&rel=0"></iframe>';
+}
+function hideYouTube(){
+ const host=$("youtubeHost");
+ if(host){host.style.display="none";host.innerHTML="";}
+ activeYouTubeSpeaker=null;
+}
+function assignYouTubeToSelected(){
+ const url=$("youtubeUrl")?$("youtubeUrl").value:"";
+ if(selected&&selected.kind==="speaker"){
+  selected.youtubeUrl=url;
+  selected.track="";
+  stopAudioForPart(selected);
+  if(selected.powered)showYouTubeForSpeaker(selected);
+  draw();
+ }
+}
+
+function initUI(){
+ $("speed").oninput=()=>{settings.speed=Number($("speed").value);$("speedNum").value=settings.speed;$("speedVal").textContent=settings.speed+"x";};
+ $("speedNum").oninput=()=>{settings.speed=Number($("speedNum").value)||1;$("speed").value=clamp(settings.speed,.1,5);$("speedVal").textContent=settings.speed+"x";};
+ $("zoom").oninput=()=>{camera.zoom=Number($("zoom").value);syncZoom();draw();};
+ $("zoomNum").oninput=()=>{camera.zoom=Math.max(.01,Number($("zoomNum").value)||1);syncZoom();draw();};
+ for(const id of ["currentOn","burnoutOn","labelsOn","terminalLabelsOn"])$(id).onchange=()=>{settings[id]=$(id).checked;solveCircuit();draw();};
+ $("play").onclick=()=>{ensureAudio();running=true;};
+ $("pause").onclick=()=>{running=!running;if(!running)stopAllAudio();draw();};
+ $("clear").onclick=clearWorld;
+ $("sample").onclick=sampleCircuit;
+ $("centerCam").onclick=()=>{camera.x=0;camera.y=0;draw();};
+ $("closeEdit").onclick=closeEditor;
+ $("audioUpload").onchange=handleAudioUpload;
+ $("speakerTrack").onchange=()=>{if(selected&&selected.kind==="speaker"){selected.track=$("speakerTrack").value;}};
+ $("testSpeaker").onclick=()=>{if($("youtubeUrl").value){showYouTubeForSpeaker({youtubeUrl:$("youtubeUrl").value});}else playTrack($("speakerTrack").value,.5);};
+ $("assignYouTube").onclick=assignYouTubeToSelected;
+ $("stopAllAudio").onclick=stopAllAudio;
+ for(const el of [$("editName"),$("editVoltage"),$("editResistance"),$("editMaxCurrent"),$("editColor"),$("editClosed"),$("editText"),$("editFrequency"),$("editTrack"),$("editYouTube")])el.oninput=applyEdit;
+ document.querySelectorAll("[data-preset]").forEach(btn=>btn.onclick=()=>loadPreset(btn.dataset.preset));
+ document.querySelectorAll(".tab-btn").forEach(btn=>btn.onclick=()=>{document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));document.querySelectorAll(".tab-panel").forEach(p=>p.classList.remove("active"));btn.classList.add("active");$("tab-"+btn.dataset.tab).classList.add("active");});
+ refreshTrackLists();
+ buildDrawer();
+}
+function syncZoom(){$("zoom").value=clamp(camera.zoom,.05,8);$("zoomNum").value=camera.zoom;$("zoomVal").textContent=Number(camera.zoom).toFixed(2);}
+function svgIcon(p){return`<svg width="78" height="42" viewBox="0 0 78 42"><rect x="6" y="13" width="58" height="16" rx="8" fill="${p.color||"#94a3b8"}" opacity=".9"/><circle cx="66" cy="21" r="5" fill="#e5f0ff"/><text x="35" y="25" text-anchor="middle" font-size="9" font-weight="900" fill="#020617">${(p.model||p.kind).toUpperCase()}</text></svg>`;}
+function buildDrawer(){const tabs=$("drawerTabs");tabs.innerHTML="";Object.keys(drawerData).forEach(key=>{const b=document.createElement("button");b.className="drawer-tab"+(key===activeDrawerTab?" active":"");b.textContent=key[0].toUpperCase()+key.slice(1);b.onclick=()=>{activeDrawerTab=key;buildDrawer();};tabs.appendChild(b);});const list=$("parts");list.innerHTML="";drawerData[activeDrawerTab].forEach(preset=>{const card=document.createElement("div");card.className="part-card";card.innerHTML=`<div class="part-icon">${svgIcon(preset)}</div><span>${preset.name}</span>`;card.onpointerdown=e=>{drawerDrag={preset,x:e.clientX,y:e.clientY};card.setPointerCapture(e.pointerId);showDragGhost(preset,e.clientX,e.clientY);};card.onpointermove=e=>{if(drawerDrag){drawerDrag.x=e.clientX;drawerDrag.y=e.clientY;moveDragGhost(e.clientX,e.clientY);}};card.onpointerup=e=>{if(!drawerDrag)return;const r=canvas.getBoundingClientRect();if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom){const p=screenToWorld(e.clientX,e.clientY);addPart(makePart(p.x,p.y,drawerDrag.preset));}drawerDrag=null;hideDragGhost();};list.appendChild(card);});}
+function showDragGhost(p,x,y){$("dragGhost").innerHTML=svgIcon(p)+`<div style="margin-top:2px;text-align:center;color:#e5f0ff;font:900 12px system-ui;text-shadow:0 0 12px #38bdf8">${p.name}</div>`;$("dragGhost").style.display="block";moveDragGhost(x,y);}
+function moveDragGhost(x,y){$("dragGhost").style.left=x+"px";$("dragGhost").style.top=y+"px";}
+function hideDragGhost(){$("dragGhost").style.display="none";$("dragGhost").innerHTML="";}
+function resize(){
+ const compactLandscape=window.matchMedia('(orientation: landscape) and (max-height: 620px)').matches;
+ const tinyLandscape=window.matchMedia('(orientation: landscape) and (max-height: 480px)').matches;
+ const drawerH=tinyLandscape?72:(compactLandscape?88:130);
+ const sideW=tinyLandscape?208:(compactLandscape?242:(editing?640:320));
+ const availableW=Math.max(420,window.innerWidth-sideW);
+ const availableH=Math.max(260,window.innerHeight-drawerH-24);
+ canvas.width=Math.min(1800,availableW);
+ canvas.height=Math.min(1200,availableH);
+ canvas.style.width=canvas.width+'px';
+ canvas.style.height=canvas.height+'px';
+ draw();
+}
+function attachEvents(){
+ window.addEventListener("resize",resize);canvas.addEventListener("contextmenu",e=>e.preventDefault());
+ canvas.addEventListener("pointerdown",e=>{ensureAudio();canvas.setPointerCapture(e.pointerId);const p=screenToWorld(e.clientX,e.clientY);if(e.button===2){panDrag={sx:e.clientX,sy:e.clientY,cx:camera.x,cy:camera.y};return;}const term=pickTerminal(p);if(e.button===0&&wDown&&term){selected=term.part;selectedWire=null;wireDrag={from:term,current:p,valid:false,to:null};draw();return;}const hit=pickPart(p);if(hit){selected=hit;selectedWire=null;moveDrag={part:hit,dx:p.x-hit.x,dy:p.y-hit.y};draw();return;}const wireHit=pickWire(p);if(wireHit){selected=null;selectedWire=wireHit;draw();return;}selected=null;selectedWire=null;draw();});
+ canvas.addEventListener("pointermove",e=>{const p=screenToWorld(e.clientX,e.clientY);if(panDrag){camera.x=panDrag.cx-(e.clientX-panDrag.sx)/camera.zoom;camera.y=panDrag.cy-(e.clientY-panDrag.sy)/camera.zoom;draw();return;}if(moveDrag){moveDrag.part.x=p.x-moveDrag.dx;moveDrag.part.y=p.y-moveDrag.dy;solveCircuit();draw();return;}if(wireDrag){const hover=pickTerminal(p);wireDrag.current=p;wireDrag.valid=!!(hover&&hover.part!==wireDrag.from.part);wireDrag.to=wireDrag.valid?hover:null;draw();}});
+ canvas.addEventListener("pointerup",e=>{const p=screenToWorld(e.clientX,e.clientY);if(panDrag){panDrag=null;return;}if(moveDrag){moveDrag=null;return;}if(wireDrag){const to=pickTerminal(p);if(to&&to.part!==wireDrag.from.part){selected=null;selectedWire={a:{id:wireDrag.from.part.id,t:wireDrag.from.terminal.name},b:{id:to.part.id,t:to.terminal.name},current:0};wires.push(selectedWire);solveCircuit();updateStats();}wireDrag=null;draw();}});
+ canvas.addEventListener("wheel",e=>{e.preventDefault();camera.zoom=Math.max(.01,Math.min(100,camera.zoom*(e.deltaY<0?1.12:.88)));syncZoom();draw();},{passive:false});
+ document.addEventListener("keydown",e=>{if(e.code==="KeyW")wDown=true;if(["INPUT","SELECT","TEXTAREA"].includes(document.activeElement.tagName))return;if(e.code==="KeyE")toggleEditor();if(e.code==="Delete"||e.code==="Backspace")deleteSelected();if(e.code==="KeyC")$("centerCam").click();if(e.code==="Space"&&selected&&selected.kind==="switch"){selected.closed=!selected.closed;solveCircuit();draw();}});
+ document.addEventListener("keyup",e=>{if(e.code==="KeyW")wDown=false;});
+}
+
+function clearWorld(){stopAllAudio();parts=[];wires=[];selected=null;selectedWire=null;closeEditor();updateStats();draw();}
+function deleteSelected(){if(selectedWire){wires=wires.filter(w=>w!==selectedWire);selectedWire=null;solveCircuit();updateStats();draw();return;}if(!selected)return;stopAudioForPart(selected);wires=wires.filter(w=>w.a.id!==selected.id&&w.b.id!==selected.id);parts=parts.filter(p=>p!==selected);selected=null;solveCircuit();updateStats();draw();}
+function updateStats(){$("partCount").textContent=parts.length;$("wireCount").textContent=wires.length;updateSelectedInfo();}
+function effectiveResistance(p){
+ if(p.kind==="capacitor")return Math.max(5,1000*(1-p.charge)+20);
+ if(p.kind==="diode")return 80;
+ if(p.kind==="fuse"&&p.burned)return Infinity;
+ return Math.max(.001,p.resistance||.001);
+}
+function termKey(id,t){return id+":"+t;}
+function splitTermKey(key){const [id,t]=key.split(":");return {id:Number(id),t};}
+function getPart(id){return parts.find(p=>p.id===id);}
+function canPassInternally(p){
+ if(!p||p.burned)return false;
+ if(p.kind==="switch"&&!p.closed)return false;
+ if(p.kind==="ground")return false;
+ return true;
+}
+function buildCircuitGraph(skipBatteryId=null){
+ const graph=new Map();
+ const add=(a,b,edge)=>{
+  if(!graph.has(a))graph.set(a,[]);
+  if(!graph.has(b))graph.set(b,[]);
+  graph.get(a).push({...edge,to:b});
+  graph.get(b).push({...edge,to:a});
+ };
+ for(const p of parts){
+  for(const t of terminalsFor(p))graph.set(termKey(p.id,t.name),graph.get(termKey(p.id,t.name))||[]);
+  if(p.id!==skipBatteryId&&canPassInternally(p)&&terminalsFor(p).length>=2){
+   add(termKey(p.id,"A"),termKey(p.id,"B"),{type:"part",part:p});
+  }
+ }
+ for(const w of wires){
+  const a=termKey(w.a.id,w.a.t),b=termKey(w.b.id,w.b.t);
+  if(getPart(w.a.id)&&getPart(w.b.id))add(a,b,{type:"wire",wire:w});
+ }
+ return graph;
+}
+function findClosedPathForBattery(bat){
+ const graph=buildCircuitGraph(bat.id);
+ const start=termKey(bat.id,"B");
+ const target=termKey(bat.id,"A");
+ const q=[start];
+ const seen=new Set([start]);
+ const prev=new Map();
+ while(q.length){
+  const node=q.shift();
+  if(node===target)break;
+  for(const edge of graph.get(node)||[]){
+   if(seen.has(edge.to))continue;
+   seen.add(edge.to);
+   prev.set(edge.to,{from:node,edge});
+   q.push(edge.to);
+  }
+ }
+ if(!seen.has(target))return null;
+ const edges=[];
+ let node=target;
+ while(node!==start){
+  const step=prev.get(node);
+  if(!step)return null;
+  edges.push(step.edge);
+  node=step.from;
+ }
+ return edges.reverse();
+}
+function solveCircuit(){
+ for(const p of parts){p.current=0;p.powered=false;p.power=0;}
+ for(const w of wires)w.current=0;
+
+ for(const bat of parts.filter(p=>p.kind==="battery"&&!p.burned)){
+  const path=findClosedPathForBattery(bat);
+  if(!path)continue;
+
+  const pathParts=[];
+  const pathWires=[];
+  for(const edge of path){
+   if(edge.type==="part"&&edge.part&&!pathParts.includes(edge.part))pathParts.push(edge.part);
+   if(edge.type==="wire"&&edge.wire&&!pathWires.includes(edge.wire))pathWires.push(edge.wire);
+  }
+
+  let totalR=bat.resistance||.001;
+  for(const p of pathParts){
+   if(p.burned){totalR=Infinity;break;}
+   if(p.kind==="switch"&&!p.closed){totalR=Infinity;break;}
+   totalR+=effectiveResistance(p);
+  }
+  if(!Number.isFinite(totalR)||totalR<=0)continue;
+
+  const current=bat.voltage/totalR;
+  bat.current=current;
+  bat.powered=true;
+  bat.power=bat.voltage*current;
+
+  for(const p of pathParts){
+   p.current=current;
+   p.powered=current>0.00001;
+   p.power=current*current*Math.max(.001,p.resistance||.001);
+   if(p.kind==="capacitor")p.charge=Math.min(1,p.charge+Math.abs(current)*.025*settings.speed);
+   if(settings.burnoutOn&&current>p.maxCurrent&&p.kind!=="battery"&&p.kind!=="ground"){
+    p.burned=true;
+    p.powered=false;
+    stopAudioForPart(p);
+   }
+  }
+  for(const w of pathWires)w.current=Math.max(w.current,current);
+ }
+
+ for(const p of parts)if(p.kind==="capacitor"&&!p.powered)p.charge=Math.max(0,p.charge-.002*settings.speed);
+ updateFunctionalParts();
+}
+function findSimpleLoop(bat){
+ const path=findClosedPathForBattery(bat);
+ if(!path)return [];
+ return path.filter(e=>e.type==="part").map(e=>e.part);
+}
+function updateFunctionalParts(){
+ for(const p of parts){
+  if(!p.powered||p.burned){if(["buzzer","speaker"].includes(p.kind)){stopAudioForPart(p);if(activeYouTubeSpeaker===p)hideYouTube();}continue;}
+  if(p.kind==="buzzer")startBuzzer(p);
+  if(p.kind==="speaker")startSpeaker(p);
+ }
+}
+function startBuzzer(p){
+ ensureAudio();
+ const volume=Math.min(.35,Math.abs(p.current)/(p.maxCurrent||1)*.25);
+ if(!p.audio){
+  const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
+  osc.type=p.model==="siren"?"sawtooth":"square";
+  osc.frequency.value=p.frequency||440;
+  gain.gain.value=0;
+  osc.connect(gain);gain.connect(masterGain);osc.start();
+  p.audio={osc,gain,type:"buzzer"};
+ }
+ const wobble=p.model==="siren"?Math.sin(performance.now()/180)*180:0;
+ p.audio.osc.frequency.setTargetAtTime((p.frequency||440)+wobble,audioCtx.currentTime,.03);
+ p.audio.gain.gain.setTargetAtTime(volume,audioCtx.currentTime,.03);
+}
+function startSpeaker(p){
+ if(p.youtubeUrl){
+  if(activeYouTubeSpeaker!==p)showYouTubeForSpeaker(p);
+  return;
+ }
+ if(!p.track)return;
+ const track=uploadedTracks.find(t=>t.id===p.track);
+ if(!track||p.audio)return;
+ ensureAudio();
+ const audio=new Audio(track.url);
+ audio.loop=true;
+ audio.volume=Math.min(1,Math.abs(p.current)/(p.maxCurrent||1));
+ audio.play().catch(()=>{});
+ p.audio={audio,type:"speaker"};
+}
+function playTrack(id,volume=.5){
+ const track=uploadedTracks.find(t=>t.id===id);
+ if(!track)return;
+ ensureAudio();
+ const audio=new Audio(track.url);
+ audio.volume=volume;
+ audio.play().catch(()=>{});
+}
+function stopAudioForPart(p){
+ if(!p||!p.audio)return;
+ try{
+  if(p.audio.osc){p.audio.gain.gain.setTargetAtTime(0,audioCtx.currentTime,.02);setTimeout(()=>{try{p.audio.osc.stop();}catch(e){}},60);}
+  if(p.audio.audio){p.audio.audio.pause();p.audio.audio.currentTime=0;}
+ }catch(e){}
+ p.audio=null;
+}
+function stopAllAudio(){for(const p of parts)stopAudioForPart(p);hideYouTube();}
+function handleAudioUpload(e){
+ const file=e.target.files&&e.target.files[0];
+ if(!file)return;
+ const id="track-"+Date.now();
+ uploadedTracks.push({id,name:file.name,url:URL.createObjectURL(file)});
+ refreshTrackLists();
+ $("speakerTrack").value=id;
+ if(selected&&selected.kind==="speaker")selected.track=id;
+}
+function refreshTrackLists(){
+ const opts='<option value="">No uploaded audio</option>'+uploadedTracks.map(t=>`<option value="${t.id}">${t.name}</option>`).join("");
+ $("speakerTrack").innerHTML=opts;
+ $("editTrack").innerHTML=opts;
+}
+
+function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);drawBackground();ctx.save();ctx.translate(canvas.width/2,canvas.height/2);ctx.scale(camera.zoom,camera.zoom);ctx.translate(-camera.x,-camera.y);drawGrid();drawWires();drawParts();drawWireDrag();ctx.restore();drawOverlay();updateSelectedInfo();}
+function drawBackground(){ctx.fillStyle="#020617";ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle="rgba(148,163,184,.14)";for(let i=0;i<140;i++)ctx.fillRect((i*97)%canvas.width,(i*211)%canvas.height,1,1);}
+function drawGrid(){ctx.save();ctx.strokeStyle="rgba(148,163,184,.04)";ctx.lineWidth=1/camera.zoom;const step=50,left=camera.x-canvas.width/(2*camera.zoom),right=camera.x+canvas.width/(2*camera.zoom),top=camera.y-canvas.height/(2*camera.zoom),bottom=camera.y+canvas.height/(2*camera.zoom);for(let x=Math.floor(left/step)*step;x<right;x+=step){ctx.beginPath();ctx.moveTo(x,top);ctx.lineTo(x,bottom);ctx.stroke();}for(let y=Math.floor(top/step)*step;y<bottom;y+=step){ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(right,y);ctx.stroke();}ctx.restore();}
+function drawWires(){ctx.save();ctx.lineCap="round";for(const w of wires){const a=wirePoint(w.a),b=wirePoint(w.b);if(w===selectedWire){ctx.save();ctx.strokeStyle="rgba(226,232,240,.95)";ctx.lineWidth=12/camera.zoom;ctx.shadowColor="#e5f0ff";ctx.shadowBlur=18/camera.zoom;ctx.setLineDash([12/camera.zoom,8/camera.zoom]);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.restore();}ctx.strokeStyle=w.current>0?"rgba(56,189,248,.72)":"rgba(148,163,184,.45)";ctx.lineWidth=6/camera.zoom;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();if(settings.currentOn&&w.current>0)drawParticlesOnWire(a,b,w.current);}ctx.restore();}
+function drawParticlesOnWire(a,b,current){const speed=performance.now()/1000*settings.speed*(40+Math.min(140,current*800)),count=Math.max(2,Math.min(14,Math.ceil(current*40)));ctx.save();ctx.fillStyle="rgba(125,211,252,.95)";ctx.shadowColor="#38bdf8";ctx.shadowBlur=14/camera.zoom;for(let i=0;i<count;i++){const t=((speed/100)+i/count)%1;ctx.beginPath();ctx.arc(a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t,3/camera.zoom,0,TAU);ctx.fill();}ctx.restore();}
+function drawParts(){for(const p of parts){drawPart(p);drawTerminals(p);if(settings.labelsOn)drawLabel(p);}}
+function intensity(p){return Math.min(1,Math.abs(p.current)/(p.maxCurrent||.01));}
+function drawPart(p){
+ const s=partSize(p);ctx.save();ctx.translate(p.x,p.y);
+ const bright=intensity(p);
+ if(p.powered&&["bulb","led","lcd","buzzer","speaker","motor","fan","servo","heater"].includes(p.kind)){
+  ctx.shadowColor=p.color;ctx.shadowBlur=10+bright*120;ctx.fillStyle=p.color;ctx.globalAlpha=.08+bright*.45;ctx.beginPath();ctx.arc(0,0,Math.max(s.w,s.h)*(.6+bright*.5),0,TAU);ctx.fill();ctx.globalAlpha=1;
+ }
+ if(p.burned)ctx.globalAlpha=.42;
+ if(p.kind==="battery")drawBattery(p,s);
+ else if(p.kind==="bulb")drawBulb(p,s);
+ else if(p.kind==="led")drawLed(p,s);
+ else if(p.kind==="lcd")drawLCD(p,s);
+ else if(p.kind==="switch")drawSwitch(p,s);
+ else if(p.kind==="ground")drawGround(p,s);
+ else drawModule(p,s);
+ ctx.restore();
+ if(p===selected){ctx.save();ctx.strokeStyle="#e5f0ff";ctx.lineWidth=2/camera.zoom;ctx.setLineDash([8/camera.zoom,6/camera.zoom]);ctx.strokeRect(p.x-s.w/2-8,p.y-s.h/2-8,s.w+16,s.h+16);ctx.restore();}
+}
+function roundedRect(x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill();ctx.stroke();}
+function drawBattery(p,s){ctx.fillStyle=p.color;ctx.strokeStyle="rgba(226,232,240,.8)";ctx.lineWidth=2/camera.zoom;roundedRect(-s.w/2,-s.h/2,s.w,s.h,12);ctx.fillStyle="#020617";ctx.font="900 13px system-ui";ctx.textAlign="center";ctx.fillText(p.model.toUpperCase(),0,4);ctx.fillStyle="#e5f0ff";ctx.fillText(fmt(p.voltage,"V"),0,20);}
+function drawBulb(p,s){ctx.strokeStyle="rgba(226,232,240,.8)";ctx.fillStyle=p.powered?p.color:"rgba(250,204,21,.25)";ctx.lineWidth=3/camera.zoom;ctx.beginPath();ctx.arc(0,-12,24,0,TAU);ctx.fill();ctx.stroke();ctx.fillStyle="#94a3b8";ctx.fillRect(-14,14,28,18);}
+function drawLed(p,s){ctx.strokeStyle="rgba(226,232,240,.8)";ctx.fillStyle=p.powered?p.color:hexToRgba(p.color,.25);ctx.lineWidth=3/camera.zoom;ctx.beginPath();ctx.moveTo(0,-30);ctx.lineTo(24,8);ctx.lineTo(-24,8);ctx.closePath();ctx.fill();ctx.stroke();ctx.beginPath();ctx.moveTo(-20,22);ctx.lineTo(20,22);ctx.stroke();}
+function drawLCD(p,s){ctx.fillStyle="#07111f";ctx.strokeStyle=p.powered?p.color:"rgba(148,163,184,.5)";ctx.lineWidth=3/camera.zoom;roundedRect(-52,-28,104,56,10);ctx.fillStyle=p.powered?p.color:"rgba(103,232,249,.16)";ctx.font="900 16px monospace";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(p.powered?(p.text||"READY").slice(0,12):"",0,0);}
+function drawSwitch(p,s){ctx.strokeStyle=p.color||"#e5f0ff";ctx.lineWidth=5/camera.zoom;ctx.beginPath();ctx.moveTo(-38,12);ctx.lineTo(-8,12);ctx.moveTo(38,12);ctx.lineTo(8,12);ctx.stroke();ctx.beginPath();ctx.moveTo(-8,12);ctx.lineTo(p.closed?8:18,p.closed?12:-18);ctx.stroke();if(p.model==="button"){ctx.fillStyle=p.closed?"#22c55e":"#ef4444";ctx.beginPath();ctx.arc(0,-12,10,0,TAU);ctx.fill();}}
+function drawGround(p,s){ctx.strokeStyle="#94a3b8";ctx.lineWidth=4/camera.zoom;ctx.beginPath();ctx.moveTo(0,-24);ctx.lineTo(0,0);ctx.moveTo(-24,0);ctx.lineTo(24,0);ctx.moveTo(-16,10);ctx.lineTo(16,10);ctx.moveTo(-8,20);ctx.lineTo(8,20);ctx.stroke();}
+function drawModule(p,s){
+ const m=p.model,br=intensity(p);
+ ctx.strokeStyle=p.color||"#f97316";ctx.fillStyle=p.color||"#f97316";ctx.lineWidth=4/camera.zoom;
+ if(m==="resistor"||m==="pot"){ctx.beginPath();ctx.moveTo(-42,0);for(let x=-28;x<=28;x+=14)ctx.lineTo(x,(x/14)%2?12:-12);ctx.lineTo(42,0);ctx.stroke();if(m==="pot"){ctx.beginPath();ctx.arc(0,-18,8,0,TAU);ctx.fill();}}
+ else if(["spoon","foil","pencil"].includes(m)){ctx.fillRect(-34,-6,68,12);if(m==="spoon"){ctx.beginPath();ctx.arc(34,0,13,0,TAU);ctx.fill();}}
+ else if(m==="coinobj"){ctx.beginPath();ctx.arc(0,0,23,0,TAU);ctx.fill();ctx.fillStyle="#020617";ctx.font="900 14px system-ui";ctx.textAlign="center";ctx.fillText("¢",0,5);}
+ else if(m==="clip"){ctx.strokeRect(-28,-14,56,28);}
+ else if(m==="capacitor"){ctx.beginPath();ctx.moveTo(-15,-24);ctx.lineTo(-15,24);ctx.moveTo(15,-24);ctx.lineTo(15,24);ctx.stroke();ctx.fillStyle=p.color;ctx.globalAlpha=.2+.6*(p.charge||0);ctx.fillRect(-12,-20,24,40);ctx.globalAlpha=1;}
+ else if(m==="diode"){ctx.beginPath();ctx.moveTo(-22,-18);ctx.lineTo(10,0);ctx.lineTo(-22,18);ctx.closePath();ctx.stroke();ctx.moveTo(12,-18);ctx.lineTo(12,18);ctx.stroke();}
+ else if(m==="fuse"){ctx.strokeStyle=p.burned?"#64748b":"#f87171";ctx.beginPath();ctx.moveTo(-34,0);ctx.lineTo(p.burned?-6:34,0);ctx.stroke();if(p.burned){ctx.moveTo(6,0);ctx.lineTo(34,0);ctx.stroke();}}
+ else if(m==="coil"){for(let i=-24;i<=24;i+=10){ctx.beginPath();ctx.arc(i,0,6,0,TAU);ctx.stroke();}}
+ else if(m==="fan"||m==="motor"||m==="servo"){p.spin+=(p.powered?0.08+br*.35:0)*settings.speed;ctx.rotate(p.spin);for(let i=0;i<3;i++){ctx.rotate(TAU/3);ctx.fillRect(0,-4,28,8);}ctx.beginPath();ctx.arc(0,0,8,0,TAU);ctx.fill();}
+ else {roundedRect(-38,-22,76,44,10);ctx.fillStyle="#020617";ctx.font="900 11px system-ui";ctx.textAlign="center";ctx.fillText(m.toUpperCase(),0,4);}
+}
+function drawTerminals(p){ctx.save();for(const t of terminalsFor(p)){const w=terminalWorld(p,t);ctx.fillStyle="#38bdf8";ctx.shadowColor="#38bdf8";ctx.shadowBlur=10;ctx.beginPath();ctx.arc(w.x,w.y,6/camera.zoom+4,0,TAU);ctx.fill();if(settings.terminalLabelsOn){ctx.shadowBlur=0;ctx.fillStyle="#e5f0ff";ctx.font=(12/camera.zoom)+"px system-ui";ctx.fillText(t.name,w.x+10/camera.zoom,w.y-8/camera.zoom);}}ctx.restore();}
+function drawLabel(p){ctx.save();ctx.fillStyle="rgba(226,232,240,.86)";ctx.font=(12/camera.zoom)+"px system-ui";ctx.textAlign="center";ctx.fillText(p.name,p.x,p.y+partSize(p).h/2+20/camera.zoom);ctx.restore();}
+function drawWireDrag(){if(!wireDrag)return;const from=wireDrag.from.point,to=wireDrag.to?wireDrag.to.point:wireDrag.current;ctx.save();ctx.strokeStyle=wireDrag.valid?"rgba(56,189,248,.95)":"rgba(148,163,184,.55)";ctx.lineWidth=5/camera.zoom;ctx.setLineDash([12/camera.zoom,7/camera.zoom]);ctx.beginPath();ctx.moveTo(from.x,from.y);ctx.lineTo(to.x,to.y);ctx.stroke();ctx.restore();}
+function drawOverlay(){ctx.save();ctx.fillStyle="rgba(226,232,240,.8)";ctx.font="700 13px system-ui";ctx.fillText(running?"Running":"Paused",18,26);ctx.fillStyle="rgba(148,163,184,.8)";ctx.fillText("Drag parts • W + left-drag terminal to wire • Space toggles switches • E edit",18,46);ctx.restore();}
+function updateSelectedInfo(){
+ if(selectedWire){const a=parts.find(p=>p.id===selectedWire.a.id),b=parts.find(p=>p.id===selectedWire.b.id);$("selectedInfo").innerHTML=`<strong>Selected Wire:</strong><br>${a?a.name:"Missing"} ${selectedWire.a.t} → ${b?b.name:"Missing"} ${selectedWire.b.t}<br>Current: ${fmt(selectedWire.current,"A")}<br>Press Delete to remove`;return;}
+ if(!selected){$("selectedInfo").innerHTML="<strong>Selected:</strong><br>None";return;}
+ $("selectedInfo").innerHTML=`<strong>Selected:</strong><br>${selected.name}<br>Voltage: ${fmt(selected.voltage,"V")}<br>Resistance: ${fmt(selected.resistance,"Ω")}<br>Current: ${fmt(selected.current,"A")}<br>Power: ${fmt(selected.power,"W")}<br>${selected.kind==="capacitor"?"Charge: "+Math.round((selected.charge||0)*100)+"%<br>":""}${selected.burned?"Burned out":""}`;
+}
+
+function updateEditorFieldVisibility(){
+ const p=selected;
+ const set=(id,show)=>{const el=$(id);if(el)el.classList.toggle("editor-field-hidden",!show);};
+ if(!p)return;
+
+ set("editNameBox",true);
+ set("editVoltageBox",p.kind==="battery");
+ set("editResistanceBox",!["battery","ground"].includes(p.kind));
+ set("editMaxCurrentBox",!["battery","ground"].includes(p.kind));
+ set("editColorBox",["led","bulb","lcd","buzzer","speaker","motor","fan","servo","heater"].includes(p.kind));
+ set("editTextBox",["lcd","mcu","timer","logic"].includes(p.kind));
+ set("editFrequencyBox",["buzzer"].includes(p.kind));
+ set("editTrackBox",p.kind==="speaker");
+ set("editYouTubeBox",p.kind==="speaker");
+ set("editClosedBox",p.kind==="switch");
+}
+
+function toggleEditor(){if(editing){closeEditor();return;}openEditor();}
+function openEditor(){if(!selected||selectedWire)return;editing=true;$("editName").value=selected.name;$("editVoltage").value=selected.voltage;$("editResistance").value=selected.resistance;$("editMaxCurrent").value=selected.maxCurrent;$("editColor").value=selected.color;$("editClosed").checked=!!selected.closed;$("editText").value=selected.text||"";$("editFrequency").value=selected.frequency||440;refreshTrackLists();$("editTrack").value=selected.track||"";$("editYouTube").value=selected.youtubeUrl||"";updateEditorFieldVisibility();$("editModal").classList.add("show");resize();}
+function closeEditor(){editing=false;$("editModal").classList.remove("show");resize();draw();}
+function applyEdit(){if(!selected||selectedWire)return;selected.name=$("editName").value;selected.voltage=Number($("editVoltage").value)||0;selected.resistance=Math.max(0,Number($("editResistance").value)||0);selected.maxCurrent=Math.max(.000001,Number($("editMaxCurrent").value)||1);selected.color=$("editColor").value;selected.closed=$("editClosed").checked;selected.text=$("editText").value;selected.frequency=Number($("editFrequency").value)||440;if(selected.track!==$("editTrack").value){stopAudioForPart(selected);selected.track=$("editTrack").value;}
+ if(selected.youtubeUrl!==$("editYouTube").value){if(activeYouTubeSpeaker===selected)hideYouTube();selected.youtubeUrl=$("editYouTube").value;}
+ selected.burned=false;solveCircuit();draw();}
+
+function p(x,y,preset){const obj=makePart(x,y,preset);parts.push(obj);return obj;}
+function c(a,ta,b,tb){wires.push({a:{id:a.id,t:ta},b:{id:b.id,t:tb},current:0});}
+function finish(sel){selected=sel||parts[0]||null;selectedWire=null;solveCircuit();updateStats();draw();}
+function sampleCircuit(){loadPreset("lcd");}
+function loadPreset(name){
+ clearWorld();camera={x:0,y:0,zoom:1};syncZoom();
+ const B=drawerData.batteries,R=drawerData.resistors,L=drawerData.lights,S=drawerData.switches,A=drawerData.audio,M=drawerData.motion,MOD=drawerData.modules;
+ if(name==="lcd"){const bat=p(-260,0,B[2]),sw=p(-90,0,S[0]),lcd=p(100,0,L[5]),g=p(285,0,S[2]);lcd.text="LIQUID";c(bat,"B",sw,"A");c(sw,"B",lcd,"A");c(lcd,"B",g,"GND");c(g,"GND",bat,"A");finish(lcd);return;}
+ if(name==="buzzer"){const bat=p(-240,0,B[2]),bz=p(20,0,A[0]),g=p(230,0,S[2]);c(bat,"B",bz,"A");c(bz,"B",g,"GND");c(g,"GND",bat,"A");finish(bz);return;}
+ if(name==="speaker"){const bat=p(-240,0,B[2]),sp=p(20,0,A[1]),g=p(230,0,S[2]);c(bat,"B",sp,"A");c(sp,"B",g,"GND");c(g,"GND",bat,"A");finish(sp);return;}
+ if(name==="motor-fan"){const bat=p(-280,0,B[2]),mot=p(-40,-50,M[0]),fan=p(120,50,M[1]),g=p(300,0,S[2]);c(bat,"B",mot,"A");c(mot,"B",fan,"A");c(fan,"B",g,"GND");c(g,"GND",bat,"A");finish(fan);return;}
+ if(name==="fuse-test"){const bat=p(-260,0,B[2]),f=p(-70,0,MOD[2]),bulb=p(90,0,L[0]),g=p(270,0,S[2]);c(bat,"B",f,"A");c(f,"B",bulb,"A");c(bulb,"B",g,"GND");c(g,"GND",bat,"A");finish(f);return;}
+ if(name==="solar-fan"){const sol=p(-220,0,B[6]),fan=p(40,0,M[1]),g=p(230,0,S[2]);c(sol,"B",fan,"A");c(fan,"B",g,"GND");c(g,"GND",sol,"A");finish(fan);return;}
+ if(name==="open-switch"){const bat=p(-260,0,B[0]),sw=p(-80,0,{...S[0],name:"Open Switch",closed:false}),led=p(100,0,L[2]),g=p(270,0,S[2]);c(bat,"B",sw,"A");c(sw,"B",led,"A");c(led,"B",g,"GND");c(g,"GND",bat,"A");finish(sw);return;}
+ if(name==="burnout-test"){const bat=p(-240,0,B[2]),led=p(20,0,{...L[1],name:"Tiny Red LED",maxCurrent:.01,resistance:20}),g=p(230,0,S[2]);c(bat,"B",led,"A");c(led,"B",g,"GND");c(g,"GND",bat,"A");finish(led);return;}
+ if(name==="three-load-chain"){const bat=p(-340,0,B[2]),r=p(-170,0,R[0]),led=p(0,-50,L[3]),bulb=p(170,50,L[0]),g=p(360,0,S[2]);c(bat,"B",r,"A");c(r,"B",led,"A");c(led,"B",bulb,"A");c(bulb,"B",g,"GND");c(g,"GND",bat,"A");finish(bulb);return;}
+ if(name==="bulb-loop"){const bat=p(-230,0,B[0]),bulb=p(40,0,L[0]),g=p(230,0,S[2]);c(bat,"B",bulb,"A");c(bulb,"B",g,"GND");c(g,"GND",bat,"A");finish(bulb);return;}
+ const bat=p(-220,0,B[0]),led=p(30,0,L[1]),g=p(220,0,S[2]);c(bat,"B",led,"A");c(led,"B",g,"GND");c(g,"GND",bat,"A");finish(led);
+}
+function loop(now){
+ const dt=Math.min((now-lastFrame)/1000,.05);lastFrame=now;
+ if(running)solveCircuit();
+ draw();
+ requestAnimationFrame(loop);
+}
+
+initUI();attachEvents();resize();sampleCircuit();requestAnimationFrame(loop);
+
+</script>
+</body>
+</html>

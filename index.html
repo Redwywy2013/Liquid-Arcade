@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Liquid Arcade</title>
+<style>
+*{box-sizing:border-box}
+:root{
+  --bg0:#020617;
+  --bg1:#07111f;
+  --bg2:#143454;
+  --panel:rgba(15,23,42,.78);
+  --border:rgba(148,163,184,.25);
+  --muted:#94a3b8;
+  --text:#e5f0ff;
+  --cyan:#38bdf8;
+  --green:#22c55e;
+  --purple:#a78bfa;
+  --orange:#f97316;
+  --red:#ef4444;
+}
+body{
+  margin:0;
+  min-height:100vh;
+  overflow:hidden;
+  color:var(--text);
+  font-family:system-ui,sans-serif;
+  background:
+    radial-gradient(circle at 18% 18%,rgba(56,189,248,.22),transparent 28%),
+    radial-gradient(circle at 86% 22%,rgba(34,197,94,.16),transparent 28%),
+    radial-gradient(circle at 50% 100%,rgba(167,139,250,.14),transparent 34%),
+    radial-gradient(circle at 20% 20%,#143454,#07111f 45%,#020617);
+}
+body:before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background:
+    linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);
+  background-size:44px 44px;
+  mask-image:radial-gradient(circle at center,black,transparent 80%);
+}
+.app{
+  position:relative;
+  z-index:1;
+  min-height:100vh;
+  display:grid;
+  grid-template-columns:1fr 420px;
+  gap:22px;
+  padding:22px;
+}
+.main{
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+}
+.hero{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:28px;
+  padding:24px;
+  box-shadow:0 20px 70px rgba(0,0,0,.45),0 0 55px rgba(56,189,248,.12);
+  backdrop-filter:blur(12px);
+}
+.kicker{
+  color:var(--muted);
+  font-size:12px;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.14em;
+}
+h1{
+  margin:6px 0 8px;
+  font-size:clamp(38px,6vw,78px);
+  letter-spacing:-.07em;
+  line-height:.9;
+}
+.subtitle{
+  max-width:760px;
+  margin:0;
+  color:#cbd5e1;
+  font-size:16px;
+  line-height:1.55;
+}
+.grid{
+  flex:1;
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:18px;
+  align-content:center;
+  padding:22px 0 0;
+}
+.card{
+  position:relative;
+  min-height:260px;
+  overflow:hidden;
+  background:linear-gradient(180deg,rgba(15,23,42,.82),rgba(2,6,23,.55));
+  border:1px solid rgba(148,163,184,.22);
+  border-radius:28px;
+  padding:20px;
+  box-shadow:0 20px 70px rgba(0,0,0,.38), inset 0 0 60px rgba(56,189,248,.06);
+  backdrop-filter:blur(12px);
+  cursor:pointer;
+  transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease;
+}
+.card:hover,.card.active{
+  transform:translateY(-5px);
+  border-color:rgba(56,189,248,.58);
+  box-shadow:0 26px 80px rgba(0,0,0,.48),0 0 50px rgba(56,189,248,.2);
+}
+.card:before{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  background:radial-gradient(circle at 30% 20%,var(--glow),transparent 36%);
+  opacity:.55;
+  pointer-events:none;
+}
+.icon{
+  position:relative;
+  width:76px;
+  height:76px;
+  border-radius:24px;
+  display:grid;
+  place-items:center;
+  margin-bottom:22px;
+  background:rgba(2,6,23,.5);
+  border:1px solid rgba(148,163,184,.18);
+}
+.icon svg{
+  width:46px;
+  height:46px;
+  filter:drop-shadow(0 0 14px var(--glow));
+}
+.card h2{
+  margin:0 0 8px;
+  font-size:30px;
+  letter-spacing:-.05em;
+}
+.card p{
+  margin:0;
+  color:#cbd5e1;
+  font-size:14px;
+  line-height:1.45;
+}
+.tag{
+  position:absolute;
+  top:18px;
+  right:18px;
+  color:var(--muted);
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  font-weight:900;
+}
+.drawer{
+  position:relative;
+}
+.panel{
+  height:calc(100vh - 44px);
+  background:rgba(15,23,42,.86);
+  border:1px solid rgba(148,163,184,.28);
+  border-radius:28px;
+  padding:22px;
+  box-shadow:0 20px 70px rgba(0,0,0,.45),0 0 45px rgba(56,189,248,.12);
+  backdrop-filter:blur(12px);
+  display:flex;
+  flex-direction:column;
+}
+.panel-art{
+  height:220px;
+  border-radius:24px;
+  border:1px solid rgba(148,163,184,.18);
+  background:
+    radial-gradient(circle at 28% 30%,var(--selected-glow),transparent 32%),
+    linear-gradient(180deg,rgba(2,6,23,.3),rgba(2,6,23,.7));
+  display:grid;
+  place-items:center;
+  margin-bottom:18px;
+}
+.panel-art svg{
+  width:120px;
+  height:120px;
+  filter:drop-shadow(0 0 24px var(--selected-glow));
+}
+.panel h2{
+  margin:0 0 10px;
+  font-size:42px;
+  letter-spacing:-.06em;
+}
+.panel p{
+  margin:0;
+  color:#cbd5e1;
+  line-height:1.55;
+}
+.facts{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin:18px 0;
+}
+.feature-list{
+  display:grid;
+  gap:10px;
+  margin:0 0 18px;
+}
+.feature{
+  display:flex;
+  gap:10px;
+  align-items:flex-start;
+  background:rgba(2,6,23,.35);
+  border:1px solid rgba(148,163,184,.14);
+  border-radius:16px;
+  padding:11px;
+}
+.feature-dot{
+  width:10px;
+  height:10px;
+  flex:0 0 10px;
+  margin-top:5px;
+  border-radius:999px;
+  background:var(--selected-glow);
+  box-shadow:0 0 16px var(--selected-glow);
+}
+.feature b{
+  display:block;
+  font-size:14px;
+  margin-bottom:2px;
+}
+.feature span{
+  display:block;
+  color:#94a3b8;
+  font-size:12px;
+  line-height:1.35;
+}
+.sidebar-footer{
+  margin-top:auto;
+  display:grid;
+  gap:12px;
+}
+.box{
+  background:rgba(2,6,23,.45);
+  border:1px solid rgba(148,163,184,.16);
+  border-radius:16px;
+  padding:12px;
+}
+.box span{
+  display:block;
+  color:var(--muted);
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:.07em;
+}
+.box b{
+  display:block;
+  margin-top:4px;
+  font-size:18px;
+}
+.play{
+  margin-top:0;
+  width:100%;
+  padding:14px 18px;
+  border:0;
+  border-radius:16px;
+  color:white;
+  font-weight:950;
+  font-size:16px;
+  letter-spacing:.04em;
+  cursor:pointer;
+  text-decoration:none;
+  text-align:center;
+  background:linear-gradient(135deg,#0ea5e9,#22c55e);
+  box-shadow:0 0 32px rgba(34,197,94,.22);
+}
+.play:hover{filter:brightness(1.15)}
+@media(max-width:1250px){
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:1050px){
+  body{overflow:auto}
+  .app{grid-template-columns:1fr;padding:14px}
+  .grid{grid-template-columns:1fr}
+  .panel{height:auto;min-height:420px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <main class="main">
+    <section class="hero">
+      <div class="kicker">wyr3forrealz.org</div>
+      <h1>Liquid Arcade</h1>
+      <p class="subtitle">Interactive simulations, experiments, and arcade projects.</p>
+    </section>
+
+    <section class="grid" id="grid"></section>
+  </main>
+
+  <aside class="drawer">
+    <section class="panel">
+      <div class="panel-art" id="panelArt"></div>
+      <h2 id="panelTitle">Liquid Electrons</h2>
+      <p id="panelDesc">A slick circuit sandbox where batteries, resistors, LEDs, buzzers, motors, switches, and other parts can be dragged into a glowing workspace and tested like a tiny digital electronics bench.</p>
+      <div class="facts">
+        <div class="box"><span>Type</span><b id="panelType">Sandbox</b></div>
+        <div class="box"><span>Status</span><b>Ready</b></div>
+      </div>
+      <div class="feature-list" id="featureList"></div>
+      <div class="sidebar-footer">
+        <div class="box"><span>Launch</span><b id="launchPhrase">Complete the circuit.</b></div>
+        <a class="play" id="playBtn" href="/liquids/electrons/">PLAY</a>
+      </div>
+    </section>
+  </aside>
+</div>
+
+<script>
+const games=[
+  {
+    id:"electrons",
+    title:"Liquid Electrons",
+    route:"/liquids/electrons/",
+    type:"Sandbox",
+    tag:"Sim",
+    color:"#38bdf8",
+    desc:"A slick circuit sandbox where batteries, resistors, LEDs, buzzers, motors, switches, and other parts can be dragged into a glowing workspace and tested like a tiny digital electronics bench.",
+    launch:"Complete the circuit.",
+    features:[
+      ["Build", "Drag batteries, lights, switches, motors, and modules onto the board."],
+      ["Wire", "Connect terminals and test closed circuits with live current flow."],
+      ["Tweak", "Edit component values, colors, audio, speed, and simulation behavior."]
+    ],
+    icon:`<svg viewBox="0 0 100 100" fill="none"><path d="M18 52h18l8-22 14 44 9-24h15" stroke="#38bdf8" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="18" cy="52" r="7" fill="#22c55e"/><circle cx="82" cy="50" r="7" fill="#22c55e"/></svg>`
+  },
+  {
+    id:"snake",
+    title:"Liquid Snake",
+    route:"/liquids/snake/",
+    type:"Arcade Sandbox",
+    tag:"Game",
+    color:"#22c55e",
+    desc:"A polished snake game with smooth movement, adjustable board sizes, keybinds, food settings, color controls, score tracking, and enough glow to make the old Nokia snake jealous.",
+    launch:"Consume the glowing circles.",
+    features:[
+      ["Customize", "Change board size, snake speed, colors, and food count."],
+      ["Control", "Use arrow keys or WASD, with editable keybinds."],
+      ["Compete", "Track score and best score with smooth arcade movement."]
+    ],
+    icon:`<svg viewBox="0 0 100 100" fill="none"><path d="M22 70c20 0 16-36 38-36h12c10 0 10 16 0 16H56c-20 0-16 34-38 34" stroke="#22c55e" stroke-width="12" stroke-linecap="round"/><circle cx="73" cy="40" r="3" fill="#e5f0ff"/><circle cx="22" cy="70" r="7" fill="#facc15"/></svg>`
+  },
+  {
+    id:"universe",
+    title:"Liquid Universe",
+    route:"/liquids/universe/",
+    type:"Physics Sandbox",
+    tag:"Sandbox",
+    color:"#a78bfa",
+    desc:"A gravity sandbox for building solar systems, tossing bodies into orbit, merging objects, making black holes, tuning physics, and watching space do space crimes.",
+    launch:"Bend space responsibly.",
+    features:[
+      ["Spawn", "Create planets, stars, gas bodies, and black holes."],
+      ["Simulate", "Tune gravity, collisions, trails, physics steps, and time scale."],
+      ["Observe", "Watch orbits, mergers, barycenters, force lines, and chaos unfold."]
+    ],
+    icon:`<svg viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="10" fill="#a78bfa"/><ellipse cx="50" cy="50" rx="38" ry="16" stroke="#38bdf8" stroke-width="5"/><ellipse cx="50" cy="50" rx="18" ry="38" stroke="#22c55e" stroke-width="5" transform="rotate(35 50 50)"/><circle cx="80" cy="50" r="5" fill="#facc15"/></svg>`
+  },
+  {
+    id:"calc",
+    title:"Liquid Calc",
+    route:"/liquids/calc/",
+    type:"Tool Sandbox",
+    tag:"Tool",
+    color:"#f97316",
+    desc:"A glowing scientific calculator with variables, custom functions, memory, history, base modes, and power tools for heavier math work.",
+    launch:"Crunch the chaos.",
+    features:[
+      ["Calculate", "Use scientific functions, trig, logs, roots, powers, and comparisons."],
+      ["Store", "Save variables, custom functions, memory values, and recent results."],
+      ["Explore", "Run summations, products, derivatives, integrals, root solving, and tables."]
+    ],
+    icon:`<svg viewBox="0 0 100 100" fill="none"><rect x="24" y="14" width="52" height="72" rx="14" fill="rgba(249,115,22,.2)" stroke="#f97316" stroke-width="6"/><rect x="34" y="25" width="32" height="13" rx="4" fill="#ef4444"/><circle cx="38" cy="53" r="4" fill="#f97316"/><circle cx="50" cy="53" r="4" fill="#f97316"/><circle cx="62" cy="53" r="4" fill="#f97316"/><circle cx="38" cy="66" r="4" fill="#ef4444"/><circle cx="50" cy="66" r="4" fill="#ef4444"/><path d="M60 65h9" stroke="#e5f0ff" stroke-width="5" stroke-linecap="round"/></svg>`
+  }
+];
+
+const grid=document.getElementById("grid");
+const panelArt=document.getElementById("panelArt");
+const panelTitle=document.getElementById("panelTitle");
+const panelDesc=document.getElementById("panelDesc");
+const panelType=document.getElementById("panelType");
+const playBtn=document.getElementById("playBtn");
+const launchPhrase=document.getElementById("launchPhrase");
+const featureList=document.getElementById("featureList");
+
+function renderCard(game){
+  const card=document.createElement("article");
+  card.className="card";
+  card.style.setProperty("--glow",game.color);
+  card.innerHTML=`
+    <div class="tag">${game.tag}</div>
+    <div class="icon">${game.icon}</div>
+    <h2>${game.title}</h2>
+    <p>${game.desc}</p>
+  `;
+
+  card.addEventListener("click",()=>selectGame(game,card));
+  grid.appendChild(card);
+}
+
+function selectGame(game,card){
+  document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));
+  card.classList.add("active");
+
+  document.documentElement.style.setProperty("--selected-glow",game.color);
+  panelArt.innerHTML=game.icon;
+  panelTitle.textContent=game.title;
+  panelDesc.textContent=game.desc;
+  panelType.textContent=game.type;
+  featureList.innerHTML=game.features.map(([title,text])=>`
+    <div class="feature">
+      <div class="feature-dot"></div>
+      <div><b>${title}</b><span>${text}</span></div>
+    </div>
+  `).join("");
+  launchPhrase.textContent=game.launch;
+  playBtn.href=game.route;
+}
+
+games.forEach(renderCard);
+selectGame(games[0],document.querySelector('.card'));
+</script>
+</body>
+</html>

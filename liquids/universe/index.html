@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gravity Lab Offline</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 20% 20%,#143454,#07111f 45%,#020617);color:#e5f0ff;font-family:system-ui,sans-serif;display:flex;justify-content:center;align-items:stretch;min-height:100vh;overflow:hidden}
+#wrap{display:flex;gap:22px;align-items:center;justify-content:center;width:100vw;height:100vh;padding:12px}
+#ui{width:280px;flex:0 0 280px;align-self:center;background:rgba(15,23,42,.78);border:1px solid rgba(148,163,184,.25);border-radius:24px;padding:18px;box-shadow:0 20px 70px rgba(0,0,0,.45);backdrop-filter:blur(12px);max-height:calc(100vh - 24px);overflow:auto;scrollbar-width:thin}
+h1{margin:0 0 14px;font-size:30px;letter-spacing:-.04em}.stat{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}.box{background:rgba(2,6,23,.45);border:1px solid rgba(148,163,184,.16);border-radius:16px;padding:12px;margin-top:8px}.box span{display:block;color:#94a3b8;font-size:12px;text-transform:uppercase;letter-spacing:.07em}.box b{font-size:24px}button,select,input{width:100%;margin-top:8px;padding:10px;border-radius:12px;border:1px solid #475569;background:#111827;color:white;font-weight:800;cursor:pointer}input[type="color"]{height:42px;padding:4px}input[type="range"]{padding:0;accent-color:#38bdf8}input[type="number"]{cursor:text}.range-pair{display:grid;grid-template-columns:1fr 78px;gap:8px;align-items:center}.range-pair input{margin-top:8px}.range-pair input[type="number"]{padding:8px;font-size:12px}button:hover{filter:brightness(1.15)}#play{background:linear-gradient(135deg,#0ea5e9,#22c55e);border:0}.danger{background:linear-gradient(135deg,#ef4444,#f97316);border:0}.mini{font-size:12px;padding:8px}.tabs{display:flex;gap:0;margin:14px -10px 14px;padding:0 6px;overflow-x:auto}.tab-btn{position:relative;margin:0 -1px -1px 0;padding:9px 8px;font-size:11px;border-radius:12px 12px 0 0;border:1px solid rgba(148,163,184,.22);border-bottom-color:rgba(148,163,184,.22);background:rgba(15,23,42,.55);color:#94a3b8;box-shadow:none;min-width:62px}.tab-btn:hover{filter:none;background:rgba(30,41,59,.8);color:#e5f0ff}.tab-btn.active{z-index:2;background:rgba(15,23,42,.96);border-color:rgba(148,163,184,.32);border-bottom-color:rgba(15,23,42,.96);color:#e5f0ff}.tab-panel{display:none}.tab-panel.active{display:block}h3{margin:10px 0 8px}.hint{color:#94a3b8;font-size:13px;line-height:1.4;margin-top:12px}.check-row{display:flex;align-items:center;gap:10px;margin-top:8px;color:#e5f0ff;font-weight:800}.check-row input{width:auto;margin:0;accent-color:#22c55e}.value{float:right;color:#e5f0ff;font-weight:900}.selected{font-size:13px;line-height:1.45;color:#cbd5e1}.selected strong{color:#fff}canvas{display:block;margin:auto;background:#020617;border:1px solid rgba(148,163,184,.25);border-radius:28px;box-shadow:inset 0 0 60px rgba(56,189,248,.08),0 0 55px rgba(56,189,248,.16);cursor:crosshair;touch-action:none}.modal{position:fixed;right:12px;top:12px;bottom:12px;width:300px;display:block;z-index:20;transform:translateX(calc(100% + 28px));opacity:0;pointer-events:none;transition:transform .38s cubic-bezier(.2,.9,.2,1),opacity .25s ease}.modal.show{transform:translateX(0);opacity:1;pointer-events:auto}.editor{height:100%;background:rgba(15,23,42,.86);border:1px solid rgba(148,163,184,.28);border-radius:24px;padding:18px;box-shadow:0 20px 70px rgba(0,0,0,.45);backdrop-filter:blur(12px);overflow:auto;scrollbar-width:thin}.editor h2{margin:0 0 10px;font-size:28px;letter-spacing:-.04em}.editor small{color:#94a3b8}@media(max-width:900px){body{overflow:auto;padding:16px}#wrap{flex-direction:column;width:100%;height:auto}#ui{width:min(680px,100%);max-height:none}canvas{width:min(100%,900px)!important;height:auto!important}.modal{right:12px;left:12px;width:auto}}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="ui">
+    <h1>Gravity Lab</h1>
+    <div class="stat">
+      <div class="box"><span>Bodies</span><b id="bodyCount">0</b></div>
+      <div class="box"><span>FPS</span><b id="fps">0</b></div>
+    </div>
+    <button id="play">Play</button>
+    <button id="pause">Pause</button>
+    <button id="step">Step Frame</button>
+    <button id="reset" class="danger">Reset Solar System</button>
+    <button id="clear" class="danger">Clear</button>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="general">General</button>
+      <button class="tab-btn" data-tab="spawn">Spawn</button>
+      <button class="tab-btn" data-tab="physics">Physics</button>
+      <button class="tab-btn" data-tab="presets">Presets</button>
+      <button class="tab-btn" data-tab="view">View</button>
+    </div>
+
+    <section class="tab-panel active" id="tab-general">
+      <h3>World</h3>
+      <div class="box"><span>Time Scale (sim s / real s) <em class="value" id="timeScaleVal">1x</em></span><div class="range-pair"><input id="timeScale" type="range" min="0.05" max="50" step="0.05" value="1"><input id="timeScaleNum" type="number" step="0.05" value="1"></div></div>
+      <div class="box"><span>Physics Steps (substeps / frame) <em class="value" id="stepsVal">2</em></span><div class="range-pair"><input id="steps" type="range" min="1" max="10" step="1" value="2"><input id="stepsNum" type="number" step="1" value="2"></div></div>
+      <div class="box"><span>Gravity Strength (LU³ / MU / s²) <em class="value" id="gravityVal">70</em></span><div class="range-pair"><input id="gravity" type="range" min="0" max="300" step="1" value="70"><input id="gravityNum" type="number" step="1" value="70"></div></div>
+      <div class="box"><span>Softening Distance (LU) <em class="value" id="softeningVal">80</em></span><div class="range-pair"><input id="softening" type="range" min="0" max="500" step="1" value="80"><input id="softeningNum" type="number" step="1" value="80"></div></div>
+      <label class="check-row"><input id="realUnitsOn" type="checkbox"> Real SI unit reference</label>
+      <label class="check-row"><input id="gravityOn" type="checkbox" checked> Enable gravity</label>
+      <label class="check-row"><input id="boundsOn" type="checkbox"> Soft world bounds</label>
+      <div class="hint">Units: LU = length unit, MU = simulation mass unit, s = simulation second. 1 MU is mapped to 1 Earth mass. Evolution uses real mass breakpoints: star at about 0.08 M☉ / 80 M♃, black hole candidate at about 20 M☉. Black hole radius follows Schwarzschild scaling: about 2.95 LU per solar mass. Sliders keep normal ranges; typed values can go beyond them. Drag when spawning to give velocity. Mouse wheel zooms from extreme-wide to close-up. Middle/right drag pans. Press R on a selected object to show the useful gravity field and live tug vectors. Hold Shift while moving sliders to bypass default snapping.</div>
+    </section>
+
+    <section class="tab-panel" id="tab-spawn">
+      <h3>Spawn</h3>
+      <div class="box"><span>Object Type</span><select id="spawnType"><option value="planet">Planet</option><option value="star">Star</option><option value="gas">Gas</option><option value="blackhole">Black Hole</option></select></div>
+      <div class="box"><span>Mass <em class="value" id="massVal">80 MU</em></span><div class="range-pair"><input id="mass" type="range" min="1" max="5000" step="1" value="80"><input id="massNum" type="number" step="any" value="80"></div><select id="massUnit"><option value="MU">Simulation Mass (MU)</option><option value="kg">Kilograms (kg)</option><option value="g">Grams (g)</option><option value="ug">Micrograms (µg)</option><option value="mg">Milligrams (mg)</option><option value="carat">Carats (ct)</option><option value="t">Metric tons (t)</option><option value="ton_us">US short tons</option><option value="ton_uk">UK long tons</option><option value="stone">Stone (st)</option><option value="lb">Pounds (lb)</option><option value="oz">Ounces (oz)</option><option value="slug">Slugs</option><option value="earth">Earth masses (M⊕)</option><option value="moon">Moon masses</option><option value="jupiter">Jupiter masses (M♃)</option><option value="solar">Solar masses (M☉)</option></select></div>
+      <div class="box"><span>Radius (LU) <em class="value" id="radiusVal">8</em></span><div class="range-pair"><input id="radius" type="range" min="2" max="80" step="1" value="8"><input id="radiusNum" type="number" step="1" value="8"></div></div>
+      <label class="check-row"><input id="autoRadius" type="checkbox" checked> Auto radius from mass</label>
+      <div class="box"><span>Color</span><input id="spawnColor" type="color" value="#60a5fa"></div>
+      <div class="box"><span>Velocity Multiplier (LU/s per drag LU) <em class="value" id="velVal">0.12</em></span><div class="range-pair"><input id="velMult" type="range" min="0" max="1" step="0.01" value="0.12"><input id="velMultNum" type="number" step="0.01" value="0.12"></div></div>
+      <button id="randomSpawn">Random Sprinkle</button>
+      <button id="clearSelected" class="mini">Delete Selected</button>
+    </section>
+
+    <section class="tab-panel" id="tab-physics">
+      <h3>Physics</h3>
+      <div class="box"><span>Collision Mode</span><select id="collisionMode"><option value="merge">Merge</option><option value="bounce">Bounce</option><option value="destroy">Destroy Smaller</option></select></div>
+      <div class="box"><span>Space Drag (1/s) <em class="value" id="dragVal">0.000</em></span><div class="range-pair"><input id="spaceDrag" type="range" min="0" max="0.05" step="0.001" value="0"><input id="spaceDragNum" type="number" step="0.001" value="0"></div></div>
+      <div class="box"><span>Star Threshold <em class="value" id="starVal">26,632 MU</em></span><div class="range-pair"><input id="starThreshold" type="range" min="100" max="5000" step="10" value="5000"><input id="starThresholdNum" type="number" step="any" value="26632"></div></div>
+      <div class="box"><span>Black Hole Threshold <em class="value" id="blackVal">6.66e6 MU</em></span><div class="range-pair"><input id="blackThreshold" type="range" min="500" max="10000" step="10" value="10000"><input id="blackThresholdNum" type="number" step="any" value="6660000"></div></div>
+      <label class="check-row"><input id="collisionsOn" type="checkbox" checked> Object collisions</label>
+      <label class="check-row"><input id="massEvolveOn" type="checkbox" checked> Auto star / black hole evolution</label>
+      <label class="check-row"><input id="tidalOn" type="checkbox" checked> Tidal/Roche breakup</label>
+      <label class="check-row"><input id="accretionOn" type="checkbox" checked> Accretion disks</label>
+      <button id="stableOrbit" class="mini">Put Selected in Stable Orbit</button>
+      <button id="matchOrbit" class="mini">Moon Orbit Around Selected</button>
+    </section>
+
+    <section class="tab-panel" id="tab-presets">
+      <h3>Presets</h3>
+      <button id="presetBinary">Binary System</button>
+      <button id="presetSolar">Tiny Solar System</button>
+      <button id="presetCluster">Chaotic Cluster</button>
+      <button id="presetBlackHole">Black Hole + Debris</button>
+      <button id="presetGas">Gas Cloud Collapse</button>
+    </section>
+
+    <section class="tab-panel" id="tab-view">
+      <h3>View</h3>
+      <label class="check-row"><input id="trailsOn" type="checkbox" checked> Trails</label>
+      <div class="box"><span>Trail Length (points) <em class="value" id="trailVal">140</em></span><div class="range-pair"><input id="trailLength" type="range" min="0" max="500" step="5" value="140"><input id="trailLengthNum" type="number" step="5" value="140"></div></div>
+      <label class="check-row"><input id="vectorsOn" type="checkbox"> Velocity vectors</label>
+      <label class="check-row"><input id="forceLinesOn" type="checkbox"> Force lines</label>
+      <label class="check-row"><input id="barycenterOn" type="checkbox" checked> Barycenter</label>
+      <label class="check-row"><input id="hillSphereOn" type="checkbox"> Hill sphere</label>
+      <label class="check-row"><input id="rocheLimitOn" type="checkbox"> Roche limit</label>
+      <div class="box"><span>Zoom (screen px / LU) <em class="value" id="zoomVal">1.00</em></span><div class="range-pair"><input id="zoom" type="range" min="0.01" max="8" step="0.01" value="1"><input id="zoomNum" type="number" step="0.01" value="1"></div></div>
+      <button id="centerCam">Center Camera</button>
+      <button id="followSelected">Follow Selected</button>
+      <div class="box selected" id="selectedInfo"><strong>Selected:</strong><br>None</div>
+    </section>
+  </div>
+  <canvas id="sim"></canvas>
+</div>
+
+<div class="modal" id="editModal">
+  <div class="editor">
+    <h2>Edit Body</h2>
+    <small>Select an object, then press E. Press E again to close and deselect.</small>
+    <div class="box"><span>Type</span><select id="editType"><option value="planet">Planet</option><option value="star">Star</option><option value="gas">Gas</option><option value="blackhole">Black Hole</option></select></div>
+    <div class="box"><span>Mass <em class="value" id="editMassVal">0 MU</em></span><div class="range-pair"><input id="editMass" type="range" min="1" max="10000" step="1"><input id="editMassNum" type="number" step="any"></div><select id="editMassUnit"><option value="MU">Simulation Mass (MU)</option><option value="kg">Kilograms (kg)</option><option value="g">Grams (g)</option><option value="ug">Micrograms (µg)</option><option value="mg">Milligrams (mg)</option><option value="carat">Carats (ct)</option><option value="t">Metric tons (t)</option><option value="ton_us">US short tons</option><option value="ton_uk">UK long tons</option><option value="stone">Stone (st)</option><option value="lb">Pounds (lb)</option><option value="oz">Ounces (oz)</option><option value="slug">Slugs</option><option value="earth">Earth masses (M⊕)</option><option value="moon">Moon masses</option><option value="jupiter">Jupiter masses (M♃)</option><option value="solar">Solar masses (M☉)</option></select></div>
+    <div class="box"><span>Radius (LU) <em class="value" id="editRadiusVal">0</em></span><div class="range-pair"><input id="editRadius" type="range" min="1" max="150" step="1"><input id="editRadiusNum" type="number" step="1"></div></div>
+    <div class="box"><span>Color</span><input id="editColor" type="color"></div>
+    <button id="closeEdit">Done</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+const canvas=document.getElementById('sim');
+const ctx=canvas.getContext('2d');
+const $=id=>document.getElementById(id);
+const TAU=Math.PI*2;
+const MAX_PHYSICS_DT=1/120; // simulation seconds per solver slice; keeps gravity/collisions consistent at high time scales
+const MIN_COLLISION_DISTANCE=.0001;
+const REAL_G_SI=6.67430e-11;
+const LIGHT_SPEED_M_PER_S=299792458;
+const LU_METERS=1000000; // reference scale only: 1 LU = 1000 km
+const MU_KG=5.9722e24; // 1 MU = one Earth mass; real unit reference
+
+let bodies=[];
+let running=false;
+let paused=false;
+let lastTime=performance.now();
+let animationId=null;
+let fpsSmoother=60;
+let selected=null;
+let follow=false;
+let editing=false;
+let spawnDrag=null;
+let panDrag=null;
+let camera={x:0,y:0,zoom:1};
+let nextId=1;
+let shiftDown=false;
+let gravityFieldBody=null;
+
+const settings={
+ timeScale:1,steps:2,G:70,softening:80,gravityOn:true,boundsOn:false,
+ spawnType:'planet',mass:80,massUnit:'MU',radius:8,autoRadius:true,color:'#60a5fa',velMult:.12,
+ collisionMode:'merge',spaceDrag:0,starThreshold:26632,blackThreshold:6660000,collisionsOn:true,massEvolveOn:true,
+ trailsOn:true,trailLength:140,vectorsOn:false,forceLinesOn:false,barycenterOn:true,hillSphereOn:false,rocheLimitOn:false,realUnitsOn:false,tidalOn:true,accretionOn:true,editMassUnit:'MU'
+};
+
+const sliderDefaults={
+ timeScale:1,steps:2,gravity:70,softening:80,mass:80,radius:8,velMult:.12,
+ spaceDrag:0,starThreshold:26632,blackThreshold:6660000,trailLength:140,zoom:1,
+ editMass:80,editRadius:8
+};
+
+const els={
+ bodyCount:$('bodyCount'),fps:$('fps'),play:$('play'),pause:$('pause'),step:$('step'),reset:$('reset'),clear:$('clear'),
+ timeScale:$('timeScale'),steps:$('steps'),gravity:$('gravity'),softening:$('softening'),gravityOn:$('gravityOn'),boundsOn:$('boundsOn'),
+ spawnType:$('spawnType'),mass:$('mass'),massUnit:$('massUnit'),radius:$('radius'),autoRadius:$('autoRadius'),spawnColor:$('spawnColor'),velMult:$('velMult'),
+ collisionMode:$('collisionMode'),spaceDrag:$('spaceDrag'),starThreshold:$('starThreshold'),blackThreshold:$('blackThreshold'),collisionsOn:$('collisionsOn'),massEvolveOn:$('massEvolveOn'),
+ trailsOn:$('trailsOn'),trailLength:$('trailLength'),vectorsOn:$('vectorsOn'),forceLinesOn:$('forceLinesOn'),zoom:$('zoom'),selectedInfo:$('selectedInfo'),
+ editModal:$('editModal'),editType:$('editType'),editMass:$('editMass'),editMassUnit:$('editMassUnit'),editRadius:$('editRadius'),editColor:$('editColor'),closeEdit:$('closeEdit')
+};
+
+function saveSettings(){
+ localStorage.setItem('gravityLabSettings',JSON.stringify(settings));
+}
+
+function loadSettings(){
+ try{
+  const saved=JSON.parse(localStorage.getItem('gravityLabSettings'));
+  if(saved)Object.assign(settings,saved);
+  // Upgrade old arcade thresholds to real mass breakpoints.
+  if(!saved||saved.starThreshold===900)settings.starThreshold=REAL_STAR_THRESHOLD_MU;
+  if(!saved||saved.blackThreshold===3500)settings.blackThreshold=REAL_BLACK_HOLE_THRESHOLD_MU;
+ }catch(err){
+  console.warn('Could not load saved settings:',err);
+  settings.starThreshold=REAL_STAR_THRESHOLD_MU;
+  settings.blackThreshold=REAL_BLACK_HOLE_THRESHOLD_MU;
+ }
+}
+
+function snapSliderValue(el){
+ if(shiftDown)return Number(el.value);
+ const id=el.id;
+ if(!(id in sliderDefaults))return Number(el.value);
+ const def=sliderDefaults[id];
+ const min=Number(el.min);
+ const max=Number(el.max);
+ const snapRange=(max-min)*0.025;
+ if(Math.abs(Number(el.value)-def)<=snapRange){
+  el.value=def;
+  return def;
+ }
+ return Number(el.value);
+}
+
+function clampInputValue(value,min,max){
+ const n=Number(value);
+ if(Number.isNaN(n))return min;
+ return Math.max(min,Math.min(max,n));
+}
+
+function clampSliderValue(value,min,max){
+ const n=Number(value);
+ if(Number.isNaN(n))return min;
+ return Math.max(min,Math.min(max,n));
+}
+
+const EARTH_MASS_KG=5.9722e24;
+const JUPITER_MASS_KG=1.89813e27;
+const SOLAR_MASS_KG=1.98847e30;
+const JUPITER_MASS_MU=JUPITER_MASS_KG/EARTH_MASS_KG;
+const SOLAR_MASS_MU=SOLAR_MASS_KG/EARTH_MASS_KG;
+const REAL_STAR_THRESHOLD_MU=0.08*SOLAR_MASS_MU;
+const REAL_BLACK_HOLE_THRESHOLD_MU=20*SOLAR_MASS_MU;
+// Schwarzschild radius: Rs = 2GM/c^2. NASA gives about 2.9 km for one solar mass.
+// The sim maps 1 km of event-horizon radius to 1 LU, with a tiny visible floor so low-mass forced black holes can still be selected.
+const SCHWARZSCHILD_RADIUS_LU_PER_SOLAR_MASS=2.95;
+const MIN_VISIBLE_BLACK_HOLE_RADIUS_LU=3;
+// Gravity technically reaches forever. This draws the exact radius where this sim's
+// acceleration from the selected body falls to this floor value.
+const GRAVITY_FIELD_ACCEL_FLOOR=0.25; // LU/s²; field ring marks where pull is still visibly useful in the sim
+
+const MASS_UNITS={
+ MU:{label:'MU',toMU:1,digits:3},
+ kg:{label:'kg',toMU:1/EARTH_MASS_KG,digits:6},
+ g:{label:'g',toMU:.001/EARTH_MASS_KG,digits:6},
+ ug:{label:'µg',toMU:1e-9/EARTH_MASS_KG,digits:6},
+ mg:{label:'mg',toMU:1e-6/EARTH_MASS_KG,digits:6},
+ carat:{label:'ct',toMU:.0002/EARTH_MASS_KG,digits:6},
+ t:{label:'t',toMU:1000/EARTH_MASS_KG,digits:6},
+ ton_us:{label:'US ton',toMU:907.18474/EARTH_MASS_KG,digits:6},
+ ton_uk:{label:'UK ton',toMU:1016.0469088/EARTH_MASS_KG,digits:6},
+ stone:{label:'st',toMU:6.35029318/EARTH_MASS_KG,digits:6},
+ lb:{label:'lb',toMU:0.45359237/EARTH_MASS_KG,digits:6},
+ oz:{label:'oz',toMU:0.028349523125/EARTH_MASS_KG,digits:6},
+ slug:{label:'slug',toMU:14.59390294/EARTH_MASS_KG,digits:6},
+ earth:{label:'M⊕',toMU:1,digits:3},
+ moon:{label:'Moon',toMU:7.342e22/EARTH_MASS_KG,digits:4},
+ jupiter:{label:'M♃',toMU:JUPITER_MASS_MU,digits:5},
+ solar:{label:'M☉',toMU:SOLAR_MASS_MU,digits:6}
+};
+
+function massToDisplay(mu,unit=settings.massUnit){
+ const u=MASS_UNITS[unit]||MASS_UNITS.MU;
+ return Number(mu)/u.toMU;
+}
+
+function displayToMass(value,unit=settings.massUnit){
+ const n=Number(value);
+ if(Number.isNaN(n))return 0;
+ const u=MASS_UNITS[unit]||MASS_UNITS.MU;
+ return n*u.toMU;
+}
+
+function formatMass(mu,unit=settings.massUnit){
+ const u=MASS_UNITS[unit]||MASS_UNITS.MU;
+ const v=massToDisplay(mu,unit);
+ if(!Number.isFinite(v))return '0 '+u.label;
+ const av=Math.abs(v);
+ if(av!==0&&(av>=1e6||av<.001))return v.toExponential(3)+' '+u.label;
+ return Number(v.toFixed(u.digits)).toString()+' '+u.label;
+}
+
+function formatMassWithSolar(mu){
+ const earth=formatMass(mu,'MU');
+ const solar=formatMass(mu,'solar');
+ const jupiter=formatMass(mu,'jupiter');
+ return `${earth} / ${jupiter} / ${solar}`;
+}
+
+function setSliderVisual(el,value){
+ const min=Number(el.min);
+ const max=Number(el.max);
+ el.value=clampSliderValue(value,min,max);
+}
+
+function bindRange(id,key,label,format=v=>v){
+ const el=$(id);
+ const num=$(id+'Num');
+ const out=$(label);
+ const setValue=(value,fromSlider=false)=>{
+  const raw=Number(value);
+  if(Number.isNaN(raw))return;
+  if(fromSlider){
+   settings[key]=snapSliderValue(el);
+  }else{
+   settings[key]=raw;
+   setSliderVisual(el,raw);
+  }
+  if(num)num.value=settings[key];
+  out.textContent=format(settings[key]);
+  if(key==='trailLength')trimTrails();
+  if(key==='radius')settings.autoRadius=false;
+  if(key==='zoom')camera.zoom=settings[key];
+  saveSettings();
+  draw();
+ };
+ setSliderVisual(el,settings[key]);
+ if(num)num.value=settings[key];
+ out.textContent=format(settings[key]);
+ el.oninput=()=>setValue(el.value,true);
+ if(num)num.oninput=()=>setValue(num.value,false);
+}
+
+function bindMassRange(id,key,label,unitKey){
+ const el=$(id);
+ const num=$(id+'Num');
+ const out=$(label);
+ const unitEl=$(id+'Unit');
+ const update=()=>{
+  setSliderVisual(el,settings[key]);
+  if(num)num.value=massToDisplay(settings[key],settings[unitKey]);
+  out.textContent=formatMass(settings[key],settings[unitKey]);
+ };
+ el.oninput=()=>{
+  settings[key]=Math.max(0,snapSliderValue(el));
+  update();
+  saveSettings();
+  draw();
+ };
+ if(num)num.oninput=()=>{
+  settings[key]=Math.max(0,displayToMass(num.value,settings[unitKey]));
+  update();
+  saveSettings();
+  draw();
+ };
+ if(unitEl){
+  unitEl.value=settings[unitKey]||'MU';
+  unitEl.onchange=()=>{
+   settings[unitKey]=unitEl.value;
+   update();
+   saveSettings();
+   draw();
+  };
+ }
+ update();
+}
+
+
+function bindCheck(id,key){
+ const el=$(id);
+ el.checked=!!settings[key];
+ el.onchange=()=>{
+  settings[key]=el.checked;
+  saveSettings();
+  draw();
+ };
+}
+
+function bindSelect(id,key){
+ const el=$(id);
+ el.value=settings[key];
+ el.onchange=()=>{
+  settings[key]=el.value;
+  if(key==='spawnType')applyTypeDefaults();
+  saveSettings();
+  draw();
+ };
+}
+
+function bindColor(id,key){
+ const el=$(id);
+ el.value=settings[key];
+ el.oninput=()=>{
+  settings[key]=el.value;
+  saveSettings();
+  draw();
+ };
+}
+
+function initUI(){
+ loadSettings();
+ bindRange('timeScale','timeScale','timeScaleVal',v=>Number(v).toFixed(v<1?2:1)+'x');
+ bindRange('steps','steps','stepsVal',v=>v);
+ bindRange('gravity','G','gravityVal',v=>v);
+ bindRange('softening','softening','softeningVal',v=>v);
+ bindMassRange('mass','mass','massVal','massUnit');
+ bindRange('radius','radius','radiusVal',v=>v);
+ bindRange('velMult','velMult','velVal',v=>Number(v).toFixed(2));
+ bindRange('spaceDrag','spaceDrag','dragVal',v=>Number(v).toFixed(3));
+ bindRange('starThreshold','starThreshold','starVal',v=>formatMassWithSolar(v));
+ bindRange('blackThreshold','blackThreshold','blackVal',v=>formatMassWithSolar(v));
+ bindRange('trailLength','trailLength','trailVal',v=>v);
+ bindRange('zoom','zoom','zoomVal',v=>Number(v).toFixed(2));
+ bindCheck('gravityOn','gravityOn');
+ bindCheck('boundsOn','boundsOn');
+ bindCheck('autoRadius','autoRadius');
+ bindCheck('collisionsOn','collisionsOn');
+ bindCheck('massEvolveOn','massEvolveOn');
+ bindCheck('trailsOn','trailsOn');
+ bindCheck('vectorsOn','vectorsOn');
+ bindCheck('forceLinesOn','forceLinesOn');
+ bindCheck('barycenterOn','barycenterOn');
+ bindCheck('hillSphereOn','hillSphereOn');
+ bindCheck('rocheLimitOn','rocheLimitOn');
+ bindCheck('realUnitsOn','realUnitsOn');
+ bindCheck('tidalOn','tidalOn');
+ bindCheck('accretionOn','accretionOn');
+ bindSelect('spawnType','spawnType');
+ bindSelect('collisionMode','collisionMode');
+ bindColor('spawnColor','color');
+
+ for(const btn of document.querySelectorAll('.tab-btn')){
+  btn.onclick=()=>{
+   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+   btn.classList.add('active');
+   $('tab-'+btn.dataset.tab).classList.add('active');
+  };
+ }
+}
+
+function resize(){
+ const availableW=Math.max(500,window.innerWidth-(editing?640:320));
+ const availableH=Math.max(500,window.innerHeight-24);
+ canvas.width=Math.min(1600,availableW);
+ canvas.height=Math.min(1100,availableH);
+ canvas.style.width=canvas.width+'px';
+ canvas.style.height=canvas.height+'px';
+ draw();
+}
+
+
+function blackHoleRadiusForMass(m){
+ const solarMasses=Math.max(0,Number(m)||0)/SOLAR_MASS_MU;
+ const rs=solarMasses*SCHWARZSCHILD_RADIUS_LU_PER_SOLAR_MASS;
+ return Math.max(MIN_VISIBLE_BLACK_HOLE_RADIUS_LU,rs);
+}
+
+function autoRadiusForMass(m,type=settings.spawnType){
+ if(type==='blackhole')return blackHoleRadiusForMass(m);
+ if(type==='star')return Math.max(12,Math.min(70,Math.sqrt(m)*0.65));
+ if(type==='gas')return Math.max(4,Math.min(18,Math.sqrt(m)*0.22));
+ return Math.max(5,Math.min(45,Math.sqrt(m)*0.6));
+}
+
+function applyTypeDefaults(){
+ const type=settings.spawnType;
+ if(type==='planet'){
+  settings.mass=80;
+  settings.color='#60a5fa';
+ }
+ if(type==='star'){
+  settings.mass=1200;
+  settings.color='#facc15';
+ }
+ if(type==='gas'){
+  settings.mass=8;
+  settings.color='#a78bfa';
+ }
+ if(type==='blackhole'){
+  settings.mass=5000;
+  settings.color='#111827';
+ }
+ settings.radius=autoRadiusForMass(settings.mass,type);
+ syncControls();
+}
+
+function syncControls(){
+ setSliderVisual(els.mass,settings.mass);
+ if($('massNum'))$('massNum').value=massToDisplay(settings.mass,settings.massUnit);
+ if(els.massUnit)els.massUnit.value=settings.massUnit;
+ $('massVal').textContent=formatMass(settings.mass,settings.massUnit);
+ els.radius.value=clampSliderValue(settings.radius,Number(els.radius.min),Number(els.radius.max));
+ if($('radiusNum'))$('radiusNum').value=settings.radius;
+ $('radiusVal').textContent=settings.radius;
+ els.spawnColor.value=settings.color;
+ els.spawnType.value=settings.spawnType;
+ els.autoRadius.checked=settings.autoRadius;
+ els.zoom.value=camera.zoom;
+ if($('zoomNum'))$('zoomNum').value=camera.zoom;
+ $('zoomVal').textContent=Number(camera.zoom).toFixed(2);
+}
+
+function makeBody(x,y,vx=0,vy=0,opts={}){
+ const type=opts.type||settings.spawnType;
+ const mass=Number(opts.mass??settings.mass);
+ const radius=Number(type==='blackhole'?blackHoleRadiusForMass(mass):(opts.radius??(settings.autoRadius?autoRadiusForMass(mass,type):settings.radius)));
+ const color=opts.color||settings.color;
+ return {id:nextId++,x,y,vx,vy,ax:0,ay:0,mass,radius,type,color,trail:[],dead:false,temp:0,primary:!!opts.primary};
+}
+
+function addBody(b){
+ bodies.push(b);
+ selected=b;
+ updateStats();
+ return b;
+}
+
+function deleteSelected(){
+ if(!selected)return;
+ bodies=bodies.filter(b=>b!==selected);
+ selected=null;
+ follow=false;
+ if(gravityFieldBody&&!bodies.includes(gravityFieldBody))gravityFieldBody=null;
+ updateStats();
+ draw();
+}
+
+function setPrimaryBody(){
+ if(!selected)return;
+ for(const b of bodies)b.primary=false;
+ selected.primary=true;
+ draw();
+}
+
+function screenToWorld(sx,sy){
+ const rect=canvas.getBoundingClientRect();
+ return {
+  x:(sx-rect.left-canvas.width/2)/camera.zoom+camera.x,
+  y:(sy-rect.top-canvas.height/2)/camera.zoom+camera.y
+ };
+}
+
+function pickBody(p){
+ let best=null;
+ let bestD=Infinity;
+ for(const b of bodies){
+  const d=Math.hypot(b.x-p.x,b.y-p.y);
+  if(d<Math.max(b.radius,10)/camera.zoom+5&&d<bestD){
+   best=b;
+   bestD=d;
+  }
+ }
+ return best;
+}
+
+function attachEvents(){
+ window.addEventListener('resize',resize);
+
+ canvas.addEventListener('pointerdown',e=>{
+  canvas.setPointerCapture(e.pointerId);
+  const p=screenToWorld(e.clientX,e.clientY);
+  if(e.button===1||e.button===2||e.shiftKey){
+   panDrag={sx:e.clientX,sy:e.clientY,cx:camera.x,cy:camera.y};
+   return;
+  }
+  const hit=pickBody(p);
+  if(hit&&!e.altKey){
+   selected=hit;
+   follow=false;
+   updateSelectedInfo();
+   draw();
+   return;
+  }
+  spawnDrag={start:p,current:p};
+ });
+
+ canvas.addEventListener('pointermove',e=>{
+  const p=screenToWorld(e.clientX,e.clientY);
+  if(panDrag){
+   camera.x=panDrag.cx-(e.clientX-panDrag.sx)/camera.zoom;
+   camera.y=panDrag.cy-(e.clientY-panDrag.sy)/camera.zoom;
+   draw();
+   return;
+  }
+  if(spawnDrag){
+   spawnDrag.current=p;
+   draw();
+  }
+ });
+
+ canvas.addEventListener('pointerup',()=>{
+  if(panDrag){
+   panDrag=null;
+   return;
+  }
+  if(!spawnDrag)return;
+  const start=spawnDrag.start;
+  const end=spawnDrag.current;
+  const vx=(start.x-end.x)*settings.velMult;
+  const vy=(start.y-end.y)*settings.velMult;
+  addBody(makeBody(start.x,start.y,vx,vy));
+  spawnDrag=null;
+  draw();
+ });
+
+ canvas.addEventListener('contextmenu',e=>e.preventDefault());
+ canvas.addEventListener('wheel',e=>{
+  e.preventDefault();
+  const factor=e.deltaY<0?1.1:.9;
+  camera.zoom=Math.max(.01,Math.min(8,camera.zoom*factor));
+  settings.zoom=camera.zoom;
+  syncControls();
+  saveSettings();
+  draw();
+ },{passive:false});
+
+ document.addEventListener('keydown',e=>{
+  if(e.key==='Shift')shiftDown=true;
+  if(['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName))return;
+  if(e.code==='Space'){
+   e.preventDefault();
+   togglePlay();
+  }
+  if(e.code==='Delete'||e.code==='Backspace')deleteSelected();
+  if(e.code==='KeyC')centerCamera();
+  if(e.code==='KeyT')setPrimaryBody();
+  if(e.code==='KeyE')toggleEditor();
+  if(e.code==='KeyR'){
+   gravityFieldBody=gravityFieldBody===selected?null:selected;
+   draw();
+  }
+  if(e.code==='Escape')closeEditor();
+ });
+ document.addEventListener('keyup',e=>{
+  if(e.key==='Shift')shiftDown=false;
+ });
+
+ els.play.onclick=()=>{
+  running=true;
+  paused=false;
+  lastTime=performance.now();
+  loop(lastTime);
+ };
+ els.pause.onclick=togglePlay;
+ els.step.onclick=()=>{
+  paused=true;
+  running=false;
+  simulate(1/60);
+  draw();
+ };
+ els.reset.onclick=()=>presetSolar();
+ els.clear.onclick=clearWorld;
+ $('clearSelected').onclick=deleteSelected;
+ $('centerCam').onclick=centerCamera;
+ $('followSelected').onclick=()=>{
+  if(selected)follow=!follow;
+ };
+ $('randomSpawn').onclick=()=>randomSprinkle(30);
+ $('stableOrbit').onclick=setStableOrbit;
+ $('matchOrbit').onclick=spawnMoonOrbitAroundSelected;
+ els.closeEdit.onclick=()=>closeEditor(false);
+ for(const el of [els.editType,els.editMass,els.editMassUnit,els.editRadius,els.editColor]){
+  el.oninput=applyLiveEdit;
+ }
+ if($('editMassNum'))$('editMassNum').oninput=applyLiveEdit;
+ if($('editRadiusNum'))$('editRadiusNum').oninput=applyLiveEdit;
+ els.editType.onchange=applyLiveEdit;
+ $('presetBinary').onclick=presetBinary;
+ $('presetSolar').onclick=presetSolar;
+ $('presetCluster').onclick=presetCluster;
+ $('presetBlackHole').onclick=presetBlackHole;
+ $('presetGas').onclick=presetGas;
+}
+
+function togglePlay(){
+ if(running&&!paused){
+  paused=true;
+  running=false;
+  draw();
+  return;
+ }
+ running=true;
+ paused=false;
+ lastTime=performance.now();
+ loop(lastTime);
+}
+
+function loop(now){
+ if(!running||paused)return;
+ const realDt=Math.min((now-lastTime)/1000,.05);
+ lastTime=now;
+ fpsSmoother=fpsSmoother*.9+(1/Math.max(realDt,.001))*.1;
+ simulate(realDt);
+ draw();
+ animationId=requestAnimationFrame(loop);
+}
+
+function simulate(realDt){
+ const requestedSteps=Math.max(1,settings.steps|0);
+ const simDt=Math.max(0,realDt*settings.timeScale);
+ const slices=Math.max(requestedSteps,Math.ceil(simDt/MAX_PHYSICS_DT));
+ const dt=slices>0?simDt/slices:0;
+ applyGravity();
+ for(let s=0;s<slices;s++){
+  leapfrogStep(dt);
+  if(settings.tidalOn)applyTidalEffects(dt);
+  if(settings.collisionsOn)handleCollisions();
+  if(settings.massEvolveOn)evolveBodies();
+ }
+ updateStats();
+}
+
+function leapfrogStep(dt){
+ const drag=Math.exp(-Math.max(0,settings.spaceDrag)*dt);
+ for(const b of bodies){
+  b.vx+=b.ax*dt*.5;
+  b.vy+=b.ay*dt*.5;
+  b.x+=b.vx*dt;
+  b.y+=b.vy*dt;
+  if(settings.boundsOn)softBounds(b,900,700);
+  updateTrail(b);
+ }
+ applyGravity();
+ for(const b of bodies){
+  b.vx=(b.vx+b.ax*dt*.5)*drag;
+  b.vy=(b.vy+b.ay*dt*.5)*drag;
+ }
+ if(follow&&selected){
+  camera.x=selected.x;
+  camera.y=selected.y;
+ }
+}
+
+function updateTrail(b){
+ if(settings.trailsOn&&settings.trailLength>0){
+  b.trail.push({x:b.x,y:b.y});
+  if(b.trail.length>settings.trailLength)b.trail.splice(0,b.trail.length-settings.trailLength);
+ }else{
+  b.trail=[];
+ }
+}
+
+function applyGravity(){
+ for(const b of bodies){
+  b.ax=0;
+  b.ay=0;
+ }
+ if(!settings.gravityOn)return;
+ const minD=Math.max(0,settings.softening);
+ for(let i=0;i<bodies.length;i++){
+  const a=bodies[i];
+  for(let j=i+1;j<bodies.length;j++){
+   const b=bodies[j];
+   const dx=b.x-a.x;
+   const dy=b.y-a.y;
+   const rawD=Math.hypot(dx,dy)||MIN_COLLISION_DISTANCE;
+   const d=Math.max(rawD,minD,MIN_COLLISION_DISTANCE);
+   const nx=dx/rawD;
+   const ny=dy/rawD;
+   const invD2=1/(d*d);
+   const accelA=settings.G*b.mass*invD2;
+   const accelB=settings.G*a.mass*invD2;
+   a.ax+=nx*accelA;
+   a.ay+=ny*accelA;
+   b.ax-=nx*accelB;
+   b.ay-=ny*accelB;
+  }
+ }
+}
+
+function integrate(dt){
+ const drag=Math.exp(-Math.max(0,settings.spaceDrag)*dt);
+ for(const b of bodies){
+  b.vx=(b.vx+b.ax*dt)*drag;
+  b.vy=(b.vy+b.ay*dt)*drag;
+  b.x+=b.vx*dt;
+  b.y+=b.vy*dt;
+  if(settings.boundsOn)softBounds(b,900,700);
+  if(settings.trailsOn&&settings.trailLength>0){
+   b.trail.push({x:b.x,y:b.y});
+   if(b.trail.length>settings.trailLength){
+    b.trail.splice(0,b.trail.length-settings.trailLength);
+   }
+  }else{
+   b.trail=[];
+  }
+ }
+ if(follow&&selected){
+  camera.x=selected.x;
+  camera.y=selected.y;
+ }
+}
+
+function stabilizeCenterOfMass(){
+ let px=0;
+ let py=0;
+ let mt=0;
+ for(const b of bodies){
+  px+=b.vx*b.mass;
+  py+=b.vy*b.mass;
+  mt+=b.mass;
+ }
+ if(mt<=0)return;
+ const vx=px/mt;
+ const vy=py/mt;
+ for(const b of bodies){
+  b.vx-=vx;
+  b.vy-=vy;
+ }
+}
+
+function softBounds(b,w,h){
+ const k=.8;
+ if(b.x<-w)b.vx+=k;
+ if(b.x>w)b.vx-=k;
+ if(b.y<-h)b.vy+=k;
+ if(b.y>h)b.vy-=k;
+}
+
+function handleCollisions(){
+ for(let i=0;i<bodies.length;i++){
+  const a=bodies[i];
+  if(a.dead)continue;
+  for(let j=i+1;j<bodies.length;j++){
+   const b=bodies[j];
+   if(b.dead)continue;
+   const dx=b.x-a.x;
+   const dy=b.y-a.y;
+   const d=Math.hypot(dx,dy)||1;
+   if(d>a.radius+b.radius)continue;
+   if(a.type==='blackhole'||b.type==='blackhole'||settings.collisionMode==='merge')mergeBodies(a,b);
+   else if(settings.collisionMode==='destroy')destroySmaller(a,b);
+   else bounceBodies(a,b,d,dx,dy);
+  }
+ }
+ bodies=bodies.filter(b=>!b.dead);
+ if(gravityFieldBody&&gravityFieldBody.dead)gravityFieldBody=null;
+ if(selected&&selected.dead){
+  selected=null;
+  follow=false;
+ }
+}
+
+function mergeBodies(a,b){
+ const total=a.mass+b.mass;
+ const survivor=a.mass>=b.mass?a:b;
+ const other=survivor===a?b:a;
+ survivor.vx=(a.vx*a.mass+b.vx*b.mass)/total;
+ survivor.vy=(a.vy*a.mass+b.vy*b.mass)/total;
+ survivor.x=(a.x*a.mass+b.x*b.mass)/total;
+ survivor.y=(a.y*a.mass+b.y*b.mass)/total;
+ survivor.mass=total;
+ survivor.radius=survivor.type==='blackhole'?blackHoleRadiusForMass(survivor.mass):Math.sqrt(survivor.radius*survivor.radius+other.radius*other.radius);
+ survivor.primary=a.primary||b.primary;
+ survivor.trail=survivor.trail.concat(other.trail).slice(-settings.trailLength);
+ other.dead=true;
+ selected=survivor;
+}
+
+function destroySmaller(a,b){
+ const small=a.mass<b.mass?a:b;
+ const big=small===a?b:a;
+ big.mass+=small.mass*.2;
+ big.radius=big.type==='blackhole'?blackHoleRadiusForMass(big.mass):Math.sqrt(big.radius*big.radius+(small.radius*small.radius*.2));
+ if(small.primary)big.primary=true;
+ small.dead=true;
+}
+
+function bounceBodies(a,b,d,dx,dy){
+ const nx=dx/d;
+ const ny=dy/d;
+ const tx=-ny;
+ const ty=nx;
+ const dpTanA=a.vx*tx+a.vy*ty;
+ const dpTanB=b.vx*tx+b.vy*ty;
+ const dpNormA=a.vx*nx+a.vy*ny;
+ const dpNormB=b.vx*nx+b.vy*ny;
+ const mA=(dpNormA*(a.mass-b.mass)+2*b.mass*dpNormB)/(a.mass+b.mass);
+ const mB=(dpNormB*(b.mass-a.mass)+2*a.mass*dpNormA)/(a.mass+b.mass);
+ a.vx=tx*dpTanA+nx*mA;
+ a.vy=ty*dpTanA+ny*mA;
+ b.vx=tx*dpTanB+nx*mB;
+ b.vy=ty*dpTanB+ny*mB;
+ const overlap=(a.radius+b.radius-d)/2;
+ a.x-=nx*overlap;
+ a.y-=ny*overlap;
+ b.x+=nx*overlap;
+ b.y+=ny*overlap;
+}
+
+function evolveBodies(){
+ for(const b of bodies){
+  // Realistic simplified breakpoints:
+  // - sustained hydrogen fusion begins at roughly 0.08 solar masses.
+  // - stellar black holes form from very massive stars, roughly 20+ solar masses before collapse.
+  // This sim applies those mass breakpoints instantly so the game remains interactive.
+  const jm=b.mass/JUPITER_MASS_MU;
+  if(b.type==='star'&&b.mass>=settings.blackThreshold){
+   b.type='blackhole';
+   b.color='#020617';
+   b.radius=blackHoleRadiusForMass(b.mass);
+  }else if((b.type==='planet'||b.type==='gas')&&b.mass>=settings.starThreshold){
+   b.type='star';
+   b.color=b.mass/SOLAR_MASS_MU<.45?'#f97316':'#facc15';
+   b.radius=autoRadiusForMass(b.mass,'star');
+  }else if((b.type==='planet'||b.type==='gas')&&jm>=13&&jm<80){
+   b.type='gas';
+   b.color='#fb923c';
+   b.radius=Math.max(b.radius,autoRadiusForMass(b.mass,'gas'));
+  }
+ }
+}
+
+function trimTrails(){
+ for(const b of bodies){
+  if(b.trail.length>settings.trailLength){
+   b.trail.splice(0,b.trail.length-settings.trailLength);
+  }
+ }
+}
+
+function draw(){
+ if(!ctx)return;
+ ctx.clearRect(0,0,canvas.width,canvas.height);
+ drawStarscape();
+ ctx.save();
+ ctx.translate(canvas.width/2,canvas.height/2);
+ ctx.scale(camera.zoom,camera.zoom);
+ ctx.translate(-camera.x,-camera.y);
+ drawTrails();
+ if(settings.forceLinesOn)drawForceLines();
+ drawGravityFieldRing();
+ drawGravityInfluence();
+ if(settings.barycenterOn)drawBarycenter();
+ if(settings.hillSphereOn)drawHillSphere();
+ if(settings.rocheLimitOn)drawRocheLimit();
+ if(settings.accretionOn)drawAccretionDisks();
+ drawBodies();
+ if(settings.vectorsOn)drawVectors();
+ if(spawnDrag)drawSpawnPreview();
+ ctx.restore();
+ drawOverlayText();
+ updateSelectedInfo();
+}
+
+function drawStarscape(){
+ ctx.save();
+ ctx.fillStyle='#020617';
+ ctx.fillRect(0,0,canvas.width,canvas.height);
+ ctx.fillStyle='rgba(148,163,184,.18)';
+ for(let i=0;i<120;i++){
+  const x=(i*97)%canvas.width;
+  const y=(i*211)%canvas.height;
+  ctx.fillRect(x,y,1,1);
+ }
+ ctx.restore();
+}
+
+function drawTrails(){
+ if(!settings.trailsOn)return;
+ for(const b of bodies){
+  if(b.trail.length<2)continue;
+  ctx.beginPath();
+  for(let i=0;i<b.trail.length;i++){
+   const p=b.trail[i];
+   if(i===0)ctx.moveTo(p.x,p.y);
+   else ctx.lineTo(p.x,p.y);
+  }
+  ctx.strokeStyle=hexToRgba(b.color,.32);
+  ctx.lineWidth=Math.max(1,Math.min(4,b.radius*.16));
+  ctx.stroke();
+ }
+}
+
+
+function gravityFieldRadiusForBody(b){
+ if(!b||!settings.gravityOn||settings.G<=0||b.mass<=0)return 0;
+ const raw=(settings.G*b.mass)/GRAVITY_FIELD_ACCEL_FLOOR;
+ const softened=raw-(settings.softening*settings.softening);
+ return Math.sqrt(Math.max(0,softened))*.5;
+}
+
+function drawGravityFieldRing(){
+ if(!gravityFieldBody||!bodies.includes(gravityFieldBody)){
+  gravityFieldBody=null;
+  return;
+ }
+ const r=gravityFieldRadiusForBody(gravityFieldBody);
+ if(!Number.isFinite(r)||r<=0)return;
+ ctx.save();
+ ctx.shadowBlur=0;
+ ctx.strokeStyle='rgba(148,163,184,.72)';
+ ctx.lineWidth=2/camera.zoom;
+ ctx.setLineDash([10/camera.zoom,8/camera.zoom]);
+ ctx.beginPath();
+ ctx.arc(gravityFieldBody.x,gravityFieldBody.y,r,0,TAU);
+ ctx.stroke();
+ ctx.setLineDash([]);
+ ctx.fillStyle='rgba(148,163,184,.82)';
+ ctx.font=`700 ${12/camera.zoom}px system-ui`;
+ ctx.fillText(`useful gravity field: ${r.toFixed(1)} LU`,gravityFieldBody.x+r+10/camera.zoom,gravityFieldBody.y);
+ ctx.restore();
+}
+
+function gravityPullFromFieldBody(target){
+ if(!gravityFieldBody||target===gravityFieldBody||!settings.gravityOn)return null;
+ const dx=gravityFieldBody.x-target.x;
+ const dy=gravityFieldBody.y-target.y;
+ const rawD=Math.hypot(dx,dy)||MIN_COLLISION_DISTANCE;
+ const d=Math.max(rawD,settings.softening,MIN_COLLISION_DISTANCE);
+ const accel=settings.G*gravityFieldBody.mass/(d*d);
+ return {dx,dy,rawD,accel,nx:dx/rawD,ny:dy/rawD};
+}
+
+function drawGravityInfluence(){
+ if(!gravityFieldBody||!bodies.includes(gravityFieldBody))return;
+ const fieldR=gravityFieldRadiusForBody(gravityFieldBody);
+ if(!Number.isFinite(fieldR)||fieldR<=0)return;
+ ctx.save();
+ ctx.shadowBlur=0;
+ ctx.lineWidth=1.5/camera.zoom;
+ for(const b of bodies){
+  const pull=gravityPullFromFieldBody(b);
+  if(!pull||pull.rawD>fieldR)continue;
+  const strength=Math.min(1,pull.accel/Math.max(GRAVITY_FIELD_ACCEL_FLOOR,0.001));
+  const alpha=.18+strength*.52;
+  const len=Math.max(18/camera.zoom,Math.min(90/camera.zoom,pull.accel*26/camera.zoom));
+  const endX=b.x+pull.nx*len;
+  const endY=b.y+pull.ny*len;
+  ctx.strokeStyle=`rgba(148,163,184,${alpha})`;
+  ctx.fillStyle=`rgba(148,163,184,${alpha})`;
+  ctx.beginPath();
+  ctx.moveTo(b.x,b.y);
+  ctx.lineTo(endX,endY);
+  ctx.stroke();
+  const head=7/camera.zoom;
+  const side=4/camera.zoom;
+  const ax=-pull.ny;
+  const ay=pull.nx;
+  ctx.beginPath();
+  ctx.moveTo(endX,endY);
+  ctx.lineTo(endX-pull.nx*head+ax*side,endY-pull.ny*head+ay*side);
+  ctx.lineTo(endX-pull.nx*head-ax*side,endY-pull.ny*head-ay*side);
+  ctx.closePath();
+  ctx.fill();
+ }
+ ctx.restore();
+}
+
+
+function centerOfMass(){
+ let x=0,y=0,m=0;
+ for(const b of bodies){x+=b.x*b.mass;y+=b.y*b.mass;m+=b.mass;}
+ return m>0?{x:x/m,y:y/m,m}:null;
+}
+
+function drawBarycenter(){
+ const c=centerOfMass();
+ if(!c||bodies.length<2)return;
+ ctx.save();
+ ctx.shadowBlur=0;
+ ctx.strokeStyle='rgba(250,204,21,.72)';
+ ctx.lineWidth=2/camera.zoom;
+ const r=10/camera.zoom;
+ ctx.beginPath();ctx.arc(c.x,c.y,r,0,TAU);ctx.stroke();
+ ctx.beginPath();ctx.moveTo(c.x-r*1.6,c.y);ctx.lineTo(c.x+r*1.6,c.y);ctx.moveTo(c.x,c.y-r*1.6);ctx.lineTo(c.x,c.y+r*1.6);ctx.stroke();
+ ctx.fillStyle='rgba(250,204,21,.82)';ctx.font=`700 ${12/camera.zoom}px system-ui`;ctx.fillText('barycenter',c.x+14/camera.zoom,c.y-10/camera.zoom);
+ ctx.restore();
+}
+
+function dominantMass(except=null){
+ let best=null;
+ for(const b of bodies){if(b!==except&&(!best||b.mass>best.mass))best=b;}
+ return best;
+}
+
+function hillSphereRadius(body,primary=dominantMass(body)){
+ if(!body||!primary||body.mass<=0||primary.mass<=0)return 0;
+ const r=Math.hypot(body.x-primary.x,body.y-primary.y);
+ return r*Math.cbrt(body.mass/(3*primary.mass));
+}
+
+function drawHillSphere(){
+ if(!selected)return;
+ const primary=dominantMass(selected);
+ const r=hillSphereRadius(selected,primary);
+ if(!r||!Number.isFinite(r))return;
+ ctx.save();ctx.shadowBlur=0;ctx.strokeStyle='rgba(34,197,94,.55)';ctx.lineWidth=1.5/camera.zoom;ctx.setLineDash([6/camera.zoom,7/camera.zoom]);
+ ctx.beginPath();ctx.arc(selected.x,selected.y,r,0,TAU);ctx.stroke();ctx.setLineDash([]);
+ ctx.fillStyle='rgba(34,197,94,.8)';ctx.font=`700 ${12/camera.zoom}px system-ui`;ctx.fillText(`Hill sphere: ${r.toFixed(1)} LU`,selected.x+r+8/camera.zoom,selected.y+14/camera.zoom);ctx.restore();
+}
+
+function densityProxy(b){return b.mass/Math.max(1e-9,b.radius*b.radius*b.radius);}
+function rocheLimitDistance(primary,secondary){
+ if(!primary||!secondary)return 0;
+ return 2.44*primary.radius*Math.cbrt(Math.max(1e-9,densityProxy(primary))/Math.max(1e-9,densityProxy(secondary)));
+}
+
+function drawRocheLimit(){
+ if(!selected)return;
+ const primary=dominantMass(selected);
+ if(!primary)return;
+ const r=rocheLimitDistance(primary,selected);
+ if(!r||!Number.isFinite(r))return;
+ ctx.save();ctx.shadowBlur=0;ctx.strokeStyle='rgba(248,113,113,.62)';ctx.lineWidth=1.5/camera.zoom;ctx.setLineDash([4/camera.zoom,8/camera.zoom]);
+ ctx.beginPath();ctx.arc(primary.x,primary.y,r,0,TAU);ctx.stroke();ctx.setLineDash([]);
+ ctx.fillStyle='rgba(248,113,113,.85)';ctx.font=`700 ${12/camera.zoom}px system-ui`;ctx.fillText(`Roche limit for selected: ${r.toFixed(1)} LU`,primary.x+r+8/camera.zoom,primary.y+14/camera.zoom);ctx.restore();
+}
+
+function drawAccretionDisks(){
+ for(const bh of bodies){
+  if(bh.type!=='blackhole')continue;
+  let near=0;
+  for(const b of bodies){if(b!==bh&&Math.hypot(b.x-bh.x,b.y-bh.y)<Math.max(80,bh.radius*12))near++;}
+  if(!near)continue;
+  ctx.save();ctx.translate(bh.x,bh.y);ctx.rotate(performance.now()/1800);ctx.shadowBlur=12;ctx.shadowColor='#38bdf8';
+  for(let i=0;i<3;i++){
+   ctx.strokeStyle=`rgba(${147+i*20},197,253,${0.15+i*.08})`;
+   ctx.lineWidth=(2+i)/camera.zoom;
+   ctx.beginPath();ctx.ellipse(0,0,bh.radius*(2.4+i*1.2),bh.radius*(.75+i*.32),0,0,TAU);ctx.stroke();
+  }
+  ctx.restore();
+ }
+}
+
+function starClassForMass(mu){
+ const sm=mu/SOLAR_MASS_MU, jm=mu/JUPITER_MASS_MU;
+ if(jm>=13&&jm<80)return 'brown dwarf';
+ if(sm>=.08&&sm<.45)return 'red dwarf';
+ if(sm>=.45&&sm<8)return 'main sequence star';
+ if(sm>=8&&sm<20)return 'massive star / supernova candidate';
+ if(sm>=20)return 'black hole candidate after collapse';
+ return 'planetary-mass body';
+}
+
+function escapeStatusForBody(body){
+ const primary=dominantMass(body);
+ if(!body||!primary)return '';
+ const dx=body.x-primary.x,dy=body.y-primary.y,d=Math.hypot(dx,dy);
+ if(!d)return '';
+ const rvx=body.vx-primary.vx,rvy=body.vy-primary.vy;
+ const speed=Math.hypot(rvx,rvy);
+ const esc=Math.sqrt(2*settings.G*primary.mass/d);
+ const circ=Math.sqrt(settings.G*primary.mass/d);
+ const status=speed>=esc?'escaping':(Math.abs(speed-circ)/Math.max(circ,.001)<.18?'near circular orbit':'bound/elliptical');
+ return `<br>Orbit vs largest: ${status}<br>Escape speed: ${esc.toFixed(2)} LU/s<br>Circular speed: ${circ.toFixed(2)} LU/s`;
+}
+
+function setStableOrbit(){
+ if(!selected||bodies.length<2)return;
+ const primary=dominantMass(selected);
+ if(!primary)return;
+ const dx=selected.x-primary.x,dy=selected.y-primary.y;
+ const r=Math.hypot(dx,dy)||1;
+ const speed=Math.sqrt(settings.G*primary.mass/r);
+ const dir=selected.id%2?1:-1;
+ selected.vx=primary.vx+(-dy/r)*speed*dir;
+ selected.vy=primary.vy+(dx/r)*speed*dir;
+ selected.trail=[];
+ draw();
+}
+
+function spawnMoonOrbitAroundSelected(){
+ if(!selected)return;
+ const r=selected.radius*8+60;
+ const m=Math.max(1,selected.mass*.0123);
+ const speed=Math.sqrt(settings.G*selected.mass/r);
+ const moon=makeBody(selected.x+r,selected.y,selected.vx,selected.vy+speed,{type:'planet',mass:m,radius:autoRadiusForMass(m,'planet'),color:'#94a3b8'});
+ addBody(moon);
+ draw();
+}
+
+function applyTidalEffects(dt){
+ for(const primary of bodies){
+  if(primary.dead)continue;
+  for(const b of bodies){
+   if(b===primary||b.dead||b.type==='blackhole')continue;
+   if(primary.mass<=b.mass)continue;
+   const d=Math.hypot(b.x-primary.x,b.y-primary.y)||1;
+   const roche=rocheLimitDistance(primary,b);
+   if(roche>0&&d<roche){
+    b.temp=(b.temp||0)+dt;
+    b.radius*=1+Math.min(.002,dt*.0008);
+    if(b.temp>.35&&b.type==='planet'){b.type='gas';b.color='#a78bfa';}
+    if(d<primary.radius+b.radius*1.5)b.dead=true;
+   }
+  }
+ }
+}
+
+
+function drawBodies(){
+ for(const b of bodies){
+  const glow=b.type==='blackhole'?30:b.type==='star'?38:18;
+  ctx.save();
+  ctx.shadowColor=b.type==='blackhole'?'#38bdf8':b.color;
+  ctx.shadowBlur=glow;
+  if(b.type==='blackhole'){
+   ctx.strokeStyle='rgba(56,189,248,.75)';
+   ctx.lineWidth=3/camera.zoom;
+   ctx.beginPath();
+   ctx.arc(b.x,b.y,b.radius*1.55,0,TAU);
+   ctx.stroke();
+   ctx.fillStyle='#000';
+   ctx.beginPath();
+   ctx.arc(b.x,b.y,b.radius,0,TAU);
+   ctx.fill();
+  }else if(b.type==='gas'){
+   ctx.fillStyle=hexToRgba(b.color,.42);
+   ctx.beginPath();
+   ctx.arc(b.x,b.y,b.radius,0,TAU);
+   ctx.fill();
+  }else{
+   const grad=ctx.createRadialGradient(b.x-b.radius*.35,b.y-b.radius*.35,1,b.x,b.y,b.radius);
+   grad.addColorStop(0,'#fff');
+   grad.addColorStop(.2,b.color);
+   grad.addColorStop(1,shadeHex(b.color,-35));
+   ctx.fillStyle=grad;
+   ctx.beginPath();
+   ctx.arc(b.x,b.y,b.radius,0,TAU);
+   ctx.fill();
+  }
+  if(b.primary){
+   ctx.shadowBlur=0;
+   ctx.strokeStyle='#facc15';
+   ctx.lineWidth=3/camera.zoom;
+   ctx.beginPath();
+   ctx.arc(b.x,b.y,b.radius+12/camera.zoom,0,TAU);
+   ctx.stroke();
+  }
+  if(b===selected){
+   ctx.shadowBlur=0;
+   ctx.strokeStyle='#e5f0ff';
+   ctx.lineWidth=2/camera.zoom;
+   ctx.beginPath();
+   ctx.arc(b.x,b.y,b.radius+6/camera.zoom,0,TAU);
+   ctx.stroke();
+  }
+  ctx.restore();
+ }
+}
+
+function drawVectors(){
+ ctx.save();
+ ctx.strokeStyle='rgba(125,211,252,.75)';
+ ctx.lineWidth=1.5/camera.zoom;
+ for(const b of bodies){
+  ctx.beginPath();
+  ctx.moveTo(b.x,b.y);
+  ctx.lineTo(b.x+b.vx*.5,b.y+b.vy*.5);
+  ctx.stroke();
+ }
+ ctx.restore();
+}
+
+function drawForceLines(){
+ ctx.save();
+ ctx.strokeStyle='rgba(148,163,184,.08)';
+ ctx.lineWidth=1/camera.zoom;
+ for(let i=0;i<bodies.length;i++){
+  for(let j=i+1;j<bodies.length;j++){
+   const a=bodies[i];
+   const b=bodies[j];
+   ctx.beginPath();
+   ctx.moveTo(a.x,a.y);
+   ctx.lineTo(b.x,b.y);
+   ctx.stroke();
+  }
+ }
+ ctx.restore();
+}
+
+function drawSpawnPreview(){
+ const s=spawnDrag.start;
+ const c=spawnDrag.current;
+ ctx.save();
+ ctx.strokeStyle='rgba(56,189,248,.8)';
+ ctx.lineWidth=2/camera.zoom;
+ ctx.setLineDash([8/camera.zoom,6/camera.zoom]);
+ ctx.beginPath();
+ ctx.moveTo(s.x,s.y);
+ ctx.lineTo(c.x,c.y);
+ ctx.stroke();
+ ctx.setLineDash([]);
+ ctx.fillStyle=settings.color;
+ ctx.beginPath();
+ ctx.arc(s.x,s.y,settings.autoRadius?autoRadiusForMass(settings.mass,settings.spawnType):settings.radius,0,TAU);
+ ctx.fill();
+ ctx.restore();
+}
+
+function drawOverlayText(){
+ ctx.save();
+ ctx.fillStyle='rgba(226,232,240,.8)';
+ ctx.font='700 13px system-ui';
+ ctx.fillText(running&&!paused?'Running':'Paused',18,26);
+ ctx.fillStyle='rgba(148,163,184,.8)';
+ ctx.fillText('Space: play/pause • E: edit • R: field • O: stable orbit • T: primary • C: center • Delete: remove',18,46);
+ ctx.fillText('Units: LU length • MU mass • s simulation time',18,66);
+ ctx.restore();
+}
+
+function updateStats(){
+ els.bodyCount.textContent=bodies.length;
+ els.fps.textContent=Math.round(fpsSmoother);
+}
+
+function toggleEditor(){
+ if(editing){
+  closeEditor(true);
+  return;
+ }
+ openEditor();
+}
+
+function openEditor(){
+ if(!selected)return;
+ editing=true;
+ els.editType.value=selected.type;
+ setSliderVisual(els.editMass,selected.mass);
+ if($('editMassNum'))$('editMassNum').value=massToDisplay(selected.mass,settings.editMassUnit);
+ if(els.editMassUnit)els.editMassUnit.value=settings.editMassUnit;
+ els.editRadius.value=Number(selected.radius.toFixed(2));
+ if($('editRadiusNum'))$('editRadiusNum').value=Number(selected.radius.toFixed(2));
+ els.editColor.value=selected.color;
+ updateEditValues();
+ els.editModal.classList.add('show');
+ resize();
+}
+
+function closeEditor(deselect=false){
+ editing=false;
+ els.editModal.classList.remove('show');
+ if(deselect){
+  selected=null;
+  follow=false;
+ }
+ resize();
+ draw();
+}
+
+function updateEditValues(){
+ if(!selected)return;
+ $('editMassVal').textContent=formatMass(selected.mass,settings.editMassUnit);
+ $('editRadiusVal').textContent=Number(selected.radius).toFixed(0);
+ setSliderVisual(els.editMass,selected.mass);
+ els.editRadius.value=clampSliderValue(selected.radius,Number(els.editRadius.min),Number(els.editRadius.max));
+ if($('editMassNum'))$('editMassNum').value=massToDisplay(selected.mass,settings.editMassUnit);
+ if(els.editMassUnit)els.editMassUnit.value=settings.editMassUnit;
+ if($('editRadiusNum'))$('editRadiusNum').value=selected.radius;
+}
+
+function applyLiveEdit(e){
+ if(!selected)return;
+ const target=e&&e.target;
+ selected.type=els.editType.value;
+ if(target&&target.id==='editMassUnit'){
+  settings.editMassUnit=els.editMassUnit.value;
+ }else if(target&&target.id==='editMassNum'){
+  selected.mass=Math.max(0,displayToMass(target.value,settings.editMassUnit));
+  setSliderVisual(els.editMass,selected.mass);
+ }else if(target&&target.id==='editMass'){
+  selected.mass=Math.max(0,snapSliderValue(els.editMass));
+ }
+ if(target&&target.id==='editRadiusNum'){
+  selected.radius=Math.max(.01,Number(target.value)||.01);
+  setSliderVisual(els.editRadius,selected.radius);
+ }else if(target&&target.id==='editRadius'){
+  selected.radius=Math.max(.01,snapSliderValue(els.editRadius)||.01);
+ }
+ selected.color=els.editColor.value;
+ saveSettings();
+ updateEditValues();
+ updateSelectedInfo();
+ draw();
+}
+
+function updateSelectedInfo(){
+ if(!selected){
+  els.selectedInfo.innerHTML='<strong>Selected:</strong><br>None';
+  return;
+ }
+ const speed=Math.hypot(selected.vx,selected.vy);
+ const fieldText=gravityFieldBody===selected?`<br>Gravity field: ${gravityFieldRadiusForBody(selected).toFixed(1)} LU`:'';
+ const hill=settings.hillSphereOn?`<br>Hill sphere: ${hillSphereRadius(selected).toFixed(1)} LU`:'';
+ const cls=starClassForMass(selected.mass);
+ const si=settings.realUnitsOn?`<br>SI ref: ${formatMass(selected.mass,'kg')} • G=${REAL_G_SI} m³/kg/s²`:'';
+ els.selectedInfo.innerHTML=`<strong>Selected:</strong><br>${selected.type}${selected.primary?' (primary)':''}<br>Class: ${cls}<br>Mass: ${formatMass(selected.mass,settings.massUnit)}<br>Radius: ${selected.radius.toFixed(1)} LU<br>Speed: ${speed.toFixed(2)} LU/s${escapeStatusForBody(selected)}${fieldText}${hill}${si}<br>ID: ${selected.id}`;
+}
+
+function centerCamera(){
+ const primary=bodies.find(b=>b.primary);
+ if(primary){
+  camera.x=primary.x;
+  camera.y=primary.y;
+ }else{
+  camera.x=0;
+  camera.y=0;
+ }
+ follow=false;
+ draw();
+}
+
+function clearWorld(){
+ cancelAnimationFrame(animationId);
+ running=false;
+ paused=false;
+ bodies=[];
+ selected=null;
+ follow=false;
+ gravityFieldBody=null;
+ closeEditor(false);
+ updateStats();
+ draw();
+}
+
+function clearAndRun(){
+ cancelAnimationFrame(animationId);
+ bodies=[];
+ selected=null;
+ follow=false;
+ gravityFieldBody=null;
+ editing=false;
+ els.editModal.classList.remove('show');
+ running=true;
+ paused=false;
+ lastTime=performance.now();
+}
+
+function randomSprinkle(n=30){
+ for(let i=0;i<n;i++){
+  const x=(Math.random()-.5)*700;
+  const y=(Math.random()-.5)*500;
+  const vx=(Math.random()-.5)*40;
+  const vy=(Math.random()-.5)*40;
+  addBody(makeBody(x,y,vx,vy,{type:settings.spawnType,mass:settings.mass*(.5+Math.random()),color:settings.color}));
+ }
+ draw();
+}
+
+function presetBinary(){
+ clearAndRun();
+ addBody(makeBody(-120,0,0,-28,{type:'star',mass:1400,color:'#facc15',radius:28,primary:true}));
+ addBody(makeBody(120,0,0,28,{type:'star',mass:1400,color:'#fb923c',radius:28}));
+ loop(performance.now());
+ draw();
+}
+
+function presetSolar(){
+ clearAndRun();
+ addBody(makeBody(0,0,0,0,{type:'star',mass:3000,color:'#facc15',radius:38,primary:true}));
+ const planets=[90,145,210,285,370];
+ for(let i=0;i<planets.length;i++){
+  const r=planets[i];
+  const speed=Math.sqrt(settings.G*3000/r);
+  addBody(makeBody(r,0,0,speed,{type:'planet',mass:40+i*25,color:['#60a5fa','#22c55e','#f97316','#a78bfa','#94a3b8'][i],radius:7+i*2}));
+ }
+ selected=bodies.find(b=>b.primary)||null;
+ loop(performance.now());
+ draw();
+}
+
+function presetCluster(){
+ clearAndRun();
+ for(let i=0;i<70;i++){
+  const angle=Math.random()*TAU;
+  const r=Math.random()*360;
+  const x=Math.cos(angle)*r;
+  const y=Math.sin(angle)*r;
+  const spin=.035;
+  addBody(makeBody(x,y,-y*spin+(Math.random()-.5)*20,x*spin+(Math.random()-.5)*20,{type:'planet',mass:10+Math.random()*120,color:'#60a5fa'}));
+ }
+ if(bodies[0])bodies[0].primary=true;
+ loop(performance.now());
+ draw();
+}
+
+function presetBlackHole(){
+ clearAndRun();
+ addBody(makeBody(0,0,0,0,{type:'blackhole',mass:7000,color:'#020617',radius:36,primary:true}));
+ for(let i=0;i<90;i++){
+  const angle=Math.random()*TAU;
+  const r=90+Math.random()*500;
+  const speed=Math.sqrt(settings.G*7000/r)*(.7+Math.random()*.6);
+  addBody(makeBody(Math.cos(angle)*r,Math.sin(angle)*r,-Math.sin(angle)*speed,Math.cos(angle)*speed,{type:'planet',mass:3+Math.random()*25,color:'#93c5fd',radius:3+Math.random()*4}));
+ }
+ selected=bodies.find(b=>b.primary)||null;
+ loop(performance.now());
+ draw();
+}
+
+function presetGas(){
+ clearAndRun();
+ for(let i=0;i<150;i++){
+  const angle=Math.random()*TAU;
+  const r=Math.random()*320;
+  addBody(makeBody(Math.cos(angle)*r,Math.sin(angle)*r,(Math.random()-.5)*8,(Math.random()-.5)*8,{type:'gas',mass:4+Math.random()*10,color:'#a78bfa',radius:3+Math.random()*5}));
+ }
+ if(bodies[0])bodies[0].primary=true;
+ loop(performance.now());
+ draw();
+}
+
+function hexToRgba(hex,a){
+ const h=String(hex).replace('#','');
+ const n=parseInt(h,16);
+ const r=(n>>16)&255;
+ const g=(n>>8)&255;
+ const b=n&255;
+ return `rgba(${r},${g},${b},${a})`;
+}
+
+function shadeHex(hex,pct){
+ const h=String(hex).replace('#','');
+ const n=parseInt(h,16);
+ let r=(n>>16)&255;
+ let g=(n>>8)&255;
+ let b=n&255;
+ r=Math.max(0,Math.min(255,Math.round(r+r*pct/100)));
+ g=Math.max(0,Math.min(255,Math.round(g+g*pct/100)));
+ b=Math.max(0,Math.min(255,Math.round(b+b*pct/100)));
+ return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);
+}
+
+function runSelfTests(){
+ console.group('Gravity Lab self-tests');
+ const oldBodies=bodies;
+ const oldSelected=selected;
+ bodies=[];
+ selected=null;
+ const a=makeBody(0,0,0,0,{mass:10,radius:5,type:'planet',color:'#ffffff'});
+ const b=makeBody(100,0,0,0,{mass:20,radius:5,type:'planet',color:'#ffffff'});
+ bodies=[a,b];
+ applyGravity();
+ console.assert(a.ax>0,'Gravity pulls left body toward right body');
+ console.assert(b.ax<0,'Gravity pulls right body toward left body');
+ selected=a;
+ setPrimaryBody();
+ selected=b;
+ setPrimaryBody();
+ console.assert(b.primary&& !a.primary,'Only one primary object is allowed');
+ const fakeSlider={id:'gravity',value:'72',min:'0',max:'300'};
+ shiftDown=false;
+ console.assert(snapSliderValue(fakeSlider)===70,'Slider snaps near default');
+ fakeSlider.value='72';
+ shiftDown=true;
+ console.assert(snapSliderValue(fakeSlider)===72,'Shift bypasses slider snapping');
+ const c=makeBody(0,0,0,0,{mass:100,radius:20,type:'planet',color:'#ffffff'});
+ const d=makeBody(0,0,0,0,{mass:10,radius:8,type:'planet',color:'#ffffff'});
+ mergeBodies(c,d);
+ console.assert(Math.abs(c.radius-Math.sqrt(20*20+8*8))<.0001,'Merge conserves 2D area when combining radii');
+ shiftDown=false;
+ bodies=oldBodies;
+ selected=oldSelected;
+ console.groupEnd();
+}
+
+initUI();
+attachEvents();
+resize();
+runSelfTests();
+presetSolar();
+</script>
+</body>
+</html>
