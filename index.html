@@ -541,6 +541,18 @@ const games=[
   }
 ];
 
+function siteBase(){
+  const isGitHubPages=location.hostname.endsWith("github.io");
+  if(!isGitHubPages)return "";
+  const firstFolder=location.pathname.split("/").filter(Boolean)[0];
+  return firstFolder?`/${firstFolder}`:"";
+}
+
+function routeToHref(route){
+  const cleanRoute=route.startsWith("/")?route:`/${route}`;
+  return siteBase()+cleanRoute;
+}
+
 const grid=document.getElementById("grid");
 const categoryTabs=document.getElementById("categoryTabs");
 const categories=[
@@ -621,7 +633,7 @@ function selectGame(game,card){
     </div>
   `).join("");
   launchPhrase.textContent=game.launch;
-  playBtn.href=game.route;
+  playBtn.href=routeToHref(game.route);
 }
 
 renderCategoryTabs();
