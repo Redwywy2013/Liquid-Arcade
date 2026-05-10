@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Femboy Farm Tycoon</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --pink:    #e91e8c;
+            --pink2:   #f06292;
+            --pink3:   #fce4ec;
+            --blue:    #1976d2;
+            --green:   #00c853;
+            --gold:    #ffd600;
+            --dark:    #2d1b2e;
+            --bg:      #fff0f7;
+            --card:    rgba(255,255,255,0.97);
+            --shadow:  0 4px 24px rgba(233,30,140,0.13);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: var(--bg);
+            background-image:
+                radial-gradient(ellipse at 20% 10%, #fce4ec 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 90%, #e3f2fd 0%, transparent 50%);
+            height: 100dvh;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        body.climax-active {
+            animation: flashBg 0.8s infinite alternate;
+        }
+        @keyframes flashBg {
+            from { background-color: #fce4ec; }
+            to   { background-color: #ff80ab; }
+        }
+
+        /* ── HEADER ── */
+        #header {
+            background: var(--card);
+            border-bottom: 3px solid var(--pink);
+            padding: 10px 16px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            box-shadow: var(--shadow);
+            position: relative;
+            z-index: 10;
+        }
+        #header-left { display: flex; flex-direction: column; }
+        #dinero-display {
+            font-family: 'Fredoka One', cursive;
+            font-size: 2em;
+            color: var(--pink);
+            line-height: 1;
+        }
+        #gps-display {
+            font-size: 0.78em;
+            color: #888;
+            font-weight: 700;
+        }
+        #rango-txt {
+            font-size: 0.82em;
+            font-weight: 700;
+            color: var(--blue);
+            background: #e3f2fd;
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+        #btn-musica {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            border: 2px solid var(--pink);
+            background: white;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+
+        /* ── ALERTA CLÍMAX ── */
+        #climax-alert {
+            display: none;
+            position: fixed;
+            top: 80px; left: 50%;
+            transform: translateX(-50%);
+            background: var(--pink);
+            color: white;
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.1em;
+            padding: 6px 20px;
+            border-radius: 30px;
+            z-index: 50;
+            animation: bounce 0.5s infinite;
+            white-space: nowrap;
+        }
+        @keyframes bounce {
+            0%,100% { transform: translateX(-50%) translateY(0); }
+            50%      { transform: translateX(-50%) translateY(-5px); }
+        }
+
+        /* ── ZONA CENTRAL ── */
+        #main-game {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            height: calc(100dvh - 70px - 80px);
+        }
+
+        #femboy-container {
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: transform 0.12s ease;
+            position: relative;
+            z-index: 5;
+        }
+        #femboy-sprite {
+            max-width: 230px;
+            height: auto;
+            filter: drop-shadow(0 8px 24px rgba(233,30,140,0.3));
+        }
+        .click-anim { transform: scale(0.83) translateY(8px) !important; }
+
+        /* Barra de producción */
+        #prod-display {
+            position: absolute;
+            right: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+        #barra-ext {
+            width: 18px; height: 110px;
+            background: #f0d0e8;
+            border-radius: 9px;
+            overflow: hidden;
+            display: flex; flex-direction: column; justify-content: flex-end;
+            border: 2px solid var(--pink2);
+        }
+        #barra-int {
+            width: 100%; height: 0%;
+            background: linear-gradient(to top, var(--pink), var(--pink2));
+            transition: height 0.1s ease;
+        }
+        #prod-icon { font-size: 26px; }
+
+        /* ── BARRA INFERIOR DE TABS ── */
+        #bottom-bar {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            height: 72px;
+            background: var(--card);
+            border-top: 3px solid var(--pink);
+            display: flex;
+            z-index: 100;
+            box-shadow: 0 -4px 20px rgba(233,30,140,0.12);
+        }
+        .tab-btn {
+            flex: 1;
+            border: none;
+            background: transparent;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            cursor: pointer;
+            font-family: 'Nunito', sans-serif;
+            font-size: 0.65em;
+            font-weight: 800;
+            color: #bbb;
+            transition: color 0.2s, background 0.2s;
+            padding: 8px 4px;
+        }
+        .tab-btn .tab-icon { font-size: 22px; }
+        .tab-btn.active {
+            color: var(--pink);
+            background: var(--pink3);
+            border-top: 3px solid var(--pink);
+            margin-top: -3px;
+        }
+
+        /* ── PANELES ── */
+        .panel {
+            position: fixed;
+            bottom: -100%; left: 0;
+            width: 100%; height: 78%;
+            background: white;
+            border-radius: 28px 28px 0 0;
+            z-index: 200;
+            transition: bottom 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 -8px 40px rgba(0,0,0,0.18);
+        }
+        .panel.open { bottom: 72px; }
+
+        .panel-handle {
+            width: 40px; height: 5px;
+            background: #ddd;
+            border-radius: 3px;
+            margin: 12px auto 0;
+            flex-shrink: 0;
+        }
+        .panel-header {
+            padding: 12px 20px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        .panel-title {
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.4em;
+            color: var(--pink);
+        }
+        .panel-title.blue { color: var(--blue); }
+        .panel-title.green { color: var(--green); }
+        .panel-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 16px 16px;
+        }
+
+        /* ── CARDS DE ITEMS ── */
+        .item-card {
+            background: #fafafa;
+            border: 2px solid #eee;
+            border-radius: 18px;
+            padding: 14px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .item-card:hover { border-color: var(--pink2); box-shadow: 0 2px 12px rgba(233,30,140,0.1); }
+        .item-emoji { font-size: 2.2em; flex-shrink: 0; }
+        .item-info { flex: 1; }
+        .item-name {
+            font-weight: 900;
+            font-size: 0.95em;
+            color: var(--dark);
+        }
+        .item-desc {
+            font-size: 0.76em;
+            color: #888;
+            margin-top: 2px;
+        }
+        .item-cost {
+            font-size: 0.82em;
+            font-weight: 800;
+            color: var(--pink);
+        }
+        .item-owned {
+            font-size: 0.75em;
+            font-weight: 700;
+            color: var(--blue);
+        }
+        .btn-buy {
+            background: var(--pink);
+            color: white;
+            border: none;
+            padding: 10px 14px;
+            border-radius: 14px;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 900;
+            font-size: 0.82em;
+            cursor: pointer;
+            min-width: 72px;
+            transition: background 0.2s, transform 0.1s;
+            flex-shrink: 0;
+        }
+        .btn-buy:active { transform: scale(0.93); }
+        .btn-buy:disabled { background: #ddd; color: #aaa; cursor: not-allowed; }
+        .btn-buy.blue { background: var(--blue); }
+        .btn-buy.green { background: var(--green); }
+
+        /* Nivel badge */
+        .lvl-badge {
+            display: inline-block;
+            background: var(--pink);
+            color: white;
+            font-size: 0.7em;
+            font-weight: 900;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: 4px;
+        }
+        .lvl-badge.blue { background: var(--blue); }
+
+        /* Sección de empleados activos */
+        #empleados-activos {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .emp-bubble {
+            background: white;
+            border: 2px solid var(--pink2);
+            border-radius: 20px;
+            padding: 4px 10px;
+            font-size: 0.75em;
+            font-weight: 800;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 2px 8px rgba(233,30,140,0.1);
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-15px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+
+        /* Edificio activo badge */
+        #edificios-activos {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 6px;
+        }
+        .edif-badge {
+            background: var(--blue);
+            color: white;
+            border-radius: 12px;
+            padding: 3px 10px;
+            font-size: 0.72em;
+            font-weight: 800;
+        }
+
+        /* Float text */
+        .float-text {
+            position: absolute;
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.8em;
+            color: white;
+            text-shadow: 2px 2px 0 var(--pink), -1px -1px 0 var(--pink);
+            pointer-events: none;
+            animation: floatUp 0.9s ease-out forwards;
+            z-index: 60;
+        }
+        .float-text.crit {
+            color: var(--gold);
+            text-shadow: 2px 2px 0 #000;
+            font-size: 2.4em;
+        }
+        .float-text.auto {
+            color: var(--pink2);
+            font-size: 1.1em;
+            opacity: 0.8;
+        }
+        @keyframes floatUp {
+            0%   { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-110px) scale(0.7); }
+        }
+
+        /* Divider en paneles */
+        .panel-section-title {
+            font-size: 0.78em;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #bbb;
+            margin: 12px 0 6px;
+        }
+
+        /* Notificación toast */
+        #toast {
+            position: fixed;
+            top: 80px; left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: var(--dark);
+            color: white;
+            padding: 10px 22px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 0.88em;
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            z-index: 999;
+            white-space: nowrap;
+        }
+        #toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Prestige banner */
+        #prestige-banner {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 500;
+            align-items: center;
+            justify-content: center;
+        }
+        #prestige-banner.show { display: flex; }
+        #prestige-card {
+            background: white;
+            border-radius: 28px;
+            padding: 32px 28px;
+            text-align: center;
+            max-width: 320px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        #prestige-card h2 {
+            font-family: 'Fredoka One', cursive;
+            font-size: 2em;
+            color: var(--gold);
+            margin-bottom: 8px;
+        }
+        #prestige-card p { color: #666; font-size: 0.9em; margin-bottom: 20px; }
+        .btn-prestige {
+            background: linear-gradient(135deg, #ffd600, #ff8f00);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 18px;
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.1em;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        .btn-cancel {
+            background: #f5f5f5;
+            border: none;
+            padding: 12px;
+            border-radius: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        /* Overflow protection */
+        html { overflow: hidden; }
+
+        /* Scrollbar bonito */
+        .panel-scroll::-webkit-scrollbar { width: 5px; }
+        .panel-scroll::-webkit-scrollbar-track { background: transparent; }
+        .panel-scroll::-webkit-scrollbar-thumb { background: var(--pink2); border-radius: 3px; }
+    </style>
+</head>
+<body>
+
+<audio id="bg-music" loop><source src="musica.mp3" type="audio/mpeg"></audio>
+
+<!-- HEADER -->
+<div id="header">
+    <div id="header-left">
+        <div id="dinero-display">💰 $<span id="val-dinero">0</span></div>
+        <div id="gps-display">+$<span id="val-gps">0</span>/seg</div>
+    </div>
+    <div id="rango-txt">Novato (×1.0)</div>
+    <button id="btn-musica" onclick="toggleMusica()">🎵</button>
+</div>
+
+<!-- ALERTA CLÍMAX -->
+<div id="climax-alert">⚡ ¡CLÍMAX x3! ¡CLÍMAX x3! ⚡</div>
+
+<!-- ZONA PRINCIPAL -->
+<div id="main-game">
+    <div id="edificios-activos"></div>
+    <div id="empleados-activos"></div>
+
+    <div id="femboy-container">
+        <img src="femboy1.png" id="femboy-sprite" onerror="this.style.fontSize='80px';this.style.display='flex';this.outerHTML='<div id=\'femboy-sprite\' style=\'font-size:100px;user-select:none\'>🧑</div>'">
+    </div>
+
+    <div id="prod-display">
+        <div id="barra-ext"><div id="barra-int"></div></div>
+        <div id="prod-icon">🥛</div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- ═══════════════ PANELES ═══════════════ -->
+
+<!-- PANEL: MEJORAS -->
+<div id="panel-mejoras" class="panel">
+    <div class="panel-handle"></div>
+    <div class="panel-header">
+        <span class="panel-title">⚗️ Mejoras</span>
+    </div>
+    <div class="panel-scroll">
+        <div class="panel-section-title">Producción manual</div>
+
+        <div class="item-card">
+            <div class="item-emoji">💪</div>
+            <div class="item-info">
+                <div class="item-name">Fuerza de Extracción <span class="lvl-badge" id="lvl-fuerza">Nv.1</span></div>
+                <div class="item-desc">Cada click produce más</div>
+                <div class="item-cost" id="costo-fuerza">$10</div>
+            </div>
+            <button class="btn-buy" id="btn-buy-fuerza" onclick="comprarMejora('fuerza')">MEJORAR</button>
+        </div>
+
+        <div class="item-card">
+            <div class="item-emoji">🎯</div>
+            <div class="item-info">
+                <div class="item-name">Golpe Crítico <span class="lvl-badge" id="lvl-crit">0%</span></div>
+                <div class="item-desc">Chance de producir 5× al hacer click</div>
+                <div class="item-cost" id="costo-crit">$500</div>
+            </div>
+            <button class="btn-buy" id="btn-buy-crit" onclick="comprarMejora('crit')">+5% CRIT</button>
+        </div>
+
+        <div class="panel-section-title">Almacenamiento</div>
+
+        <div class="item-card">
+            <div class="item-emoji">🏺</div>
+            <div class="item-info">
+                <div class="item-name">Silo Industrial <span class="lvl-badge blue" id="lvl-meta">×1.0</span></div>
+                <div class="item-desc">Reduce cuánto se necesita para vender</div>
+                <div class="item-cost" id="costo-meta">$2,000</div>
+            </div>
+            <button class="btn-buy blue" id="btn-buy-meta" onclick="comprarMejora('meta')">REDUCIR</button>
+        </div>
+    </div>
+</div>
+
+<!-- PANEL: EMPLEADOS -->
+<div id="panel-empleados" class="panel">
+    <div class="panel-handle"></div>
+    <div class="panel-header">
+        <span class="panel-title green">👷 Empleados</span>
+    </div>
+    <div class="panel-scroll" id="lista-empleados"></div>
+</div>
+
+<!-- PANEL: EDIFICIOS -->
+<div id="panel-edificios" class="panel">
+    <div class="panel-handle"></div>
+    <div class="panel-header">
+        <span class="panel-title blue">🏗️ Edificios</span>
+    </div>
+    <div class="panel-scroll" id="lista-edificios"></div>
+</div>
+
+<!-- PANEL: SKINS -->
+<div id="panel-skins" class="panel">
+    <div class="panel-handle"></div>
+    <div class="panel-header">
+        <span class="panel-title" style="color:#9c27b0">👗 Skins</span>
+    </div>
+    <div class="panel-scroll" id="lista-skins"></div>
+</div>
+
+<!-- PRESTIGE -->
+<div id="prestige-banner">
+    <div id="prestige-card">
+        <h2>⭐ PRESTIGE</h2>
+        <p>Reinicia tu progreso a cambio de un <strong>multiplicador permanente ×1.5</strong> en todo. ¡Solo si ya lo lograste todo!</p>
+        <button class="btn-prestige" onclick="hacerPrestige()">⭐ Hacer Prestige</button>
+        <button class="btn-cancel" onclick="cerrarPrestige()">Cancelar</button>
+    </div>
+</div>
+
+<!-- BARRA DE TABS -->
+<div id="bottom-bar">
+    <button class="tab-btn active" onclick="openPanel('panel-mejoras', this)">
+        <span class="tab-icon">⚗️</span>MEJORAS
+    </button>
+    <button class="tab-btn" onclick="openPanel('panel-empleados', this)">
+        <span class="tab-icon">👷</span>EMPLEADOS
+    </button>
+    <button class="tab-btn" onclick="openPanel('panel-edificios', this)">
+        <span class="tab-icon">🏗️</span>EDIFICIOS
+    </button>
+    <button class="tab-btn" onclick="openPanel('panel-skins', this)">
+        <span class="tab-icon">👗</span>SKINS
+    </button>
+    <button class="tab-btn" onclick="mostrarPrestige()">
+        <span class="tab-icon">⭐</span>PRESTIGE
+    </button>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+//  DATOS DEL JUEGO
+// ════════════════════════════════════════════
+
+// SKINS - igual que antes
+const skinsData = [
+    { id: 1, precio: 0,       mult: 1.0,  nombre: "Novato",    img: "femboy1.png" },
+    { id: 2, precio: 200,     mult: 1.8,  nombre: "Aprendiz",  img: "femboy2.png" },
+    { id: 3, precio: 800,     mult: 3.5,  nombre: "Productor", img: "femboy3.png" },
+    { id: 4, precio: 3000,    mult: 5.0,  nombre: "Experto",   img: "femboy4.png" },
+    { id: 5, precio: 12000,   mult: 8.0,  nombre: "Maestro",   img: "femboy5.png" },
+    { id: 6, precio: 50000,   mult: 12.0, nombre: "Elite",     img: "femboy6.png" },
+    { id: 7, precio: 200000,  mult: 20.0, nombre: "Magnate",   img: "femboy7.png" },
+    { id: 8, precio: 800000,  mult: 40.0, nombre: "Leyenda",   img: "femboy8.png" },
+    { id: 9, precio: 2500000, mult: 100.0,nombre: "Dios",      img: "femboy9.png" }
+];
+
+/*
+ * EMPLEADOS
+ * Cada empleado produce "basePS" (por segundo) multiplicado por el nivel.
+ * El costo sube x2.5 cada vez que contratas uno nuevo o subes nivel.
+ */
+const empleadosData = [
+    {
+        id: "junior",
+        nombre: "Junior Femboy",
+        emoji: "🐣",
+        desc: "Nuevo en la granja. Produce poco pero es barato.",
+        baseCosto: 50,
+        basePS: 0.5,      // prod/seg base
+        costoSubir: 150,  // costo de subir nivel
+    },
+    {
+        id: "senior",
+        nombre: "Senior Femboy",
+        emoji: "🌸",
+        desc: "Con experiencia. Produce bastante de forma constante.",
+        baseCosto: 400,
+        basePS: 3.5,
+        costoSubir: 800,
+    },
+    {
+        id: "experto",
+        nombre: "Experto Lechero",
+        emoji: "⭐",
+        desc: "El mejor del negocio. Alta producción automática.",
+        baseCosto: 3000,
+        basePS: 22,
+        costoSubir: 6000,
+    },
+    {
+        id: "manager",
+        nombre: "Manager de Granja",
+        emoji: "👔",
+        desc: "Supervisa todo. Multiplica la producción de los demás ×1.5.",
+        baseCosto: 20000,
+        basePS: 100,
+        costoSubir: 40000,
+    }
+];
+
+/*
+ * EDIFICIOS
+ * Cada edificio se compra UNA vez y da un bono permanente.
+ */
+const edificiosData = [
+    {
+        id: "galpon",
+        nombre: "Galpón Básico",
+        emoji: "🏚️",
+        desc: "Aumenta la producción manual en +50%",
+        precio: 1000,
+        efecto: "clickMult",
+        valor: 1.5,
+    },
+    {
+        id: "laboratorio",
+        nombre: "Laboratorio",
+        emoji: "🔬",
+        desc: "Los empleados producen 2× más",
+        precio: 8000,
+        efecto: "empleadoMult",
+        valor: 2.0,
+    },
+    {
+        id: "silo_mega",
+        nombre: "Mega Silo",
+        emoji: "🏭",
+        desc: "Reduce el costo de todas las mejoras en -25%",
+        precio: 25000,
+        efecto: "descuentoMejoras",
+        valor: 0.75,
+    },
+    {
+        id: "mansion",
+        nombre: "Mansión Femboy",
+        emoji: "🏰",
+        desc: "Multiplica TODOS los ingresos ×2",
+        precio: 100000,
+        efecto: "globalMult",
+        valor: 2.0,
+    },
+    {
+        id: "fabrica",
+        nombre: "Fábrica Espacial",
+        emoji: "🚀",
+        desc: "Los críticos producen 10× en lugar de 5×",
+        precio: 500000,
+        efecto: "critMult",
+        valor: 10.0,
+    }
+];
+
+// ════════════════════════════════════════════
+//  ESTADO DEL JUEGO
+// ════════════════════════════════════════════
+let state = {
+    dinero: 0,
+    progreso: 0,
+    meta: 100,
+    metaGrowth: 5,
+
+    // Mejoras click
+    fuerza: 1,
+    critChance: 0,
+    critMultiplier: 5,   // puede subir con edificio
+
+    // Skins
+    skinActual: 1,
+    multi: 1.0,          // multiplicador de skin
+
+    // Empleados: { id -> { cantidad, nivel } }
+    empleados: {
+        junior:  { cantidad: 0, nivel: 1 },
+        senior:  { cantidad: 0, nivel: 1 },
+        experto: { cantidad: 0, nivel: 1 },
+        manager: { cantidad: 0, nivel: 1 },
+    },
+
+    // Edificios comprados
+    edificios: {},
+
+    // Bonos de edificios (calculados)
+    bonos: {
+        clickMult:       1.0,
+        empleadoMult:    1.0,
+        descuentoMejoras:1.0,
+        globalMult:      1.0,
+        critMult:        5.0,
+    },
+
+    // Precios mejoras
+    precios: {
+        fuerza: 10,
+        crit:   500,
+        meta:   2000,
+    },
+
+    // Racha y clímax
+    racha: 0,
+    lastClickTime: 0,
+    isClimax: false,
+
+    // Prestige
+    prestigeMult: 1.0,
+    prestigeCount: 0,
+
+    // Producción por segundo (calculada)
+    prodPS: 0,
+};
+
+// Precios actuales de empleados (mutable)
+const empPrecios = {};
+empleadosData.forEach(e => { empPrecios[e.id] = e.baseCosto; });
+const empPreciosNivel = {};
+empleadosData.forEach(e => { empPreciosNivel[e.id] = e.costoSubir; });
+
+// ════════════════════════════════════════════
+//  SONIDOS
+// ════════════════════════════════════════════
+const sfxClick   = new Audio('click.mp3');
+const sfxCritico = new Audio('gemido.mp3');
+const sfxCompra  = new Audio('compra.mp3');  // opcional, no rompe si no existe
+const musica     = document.getElementById('bg-music');
+let musicaActiva = false;
+
+function playSound(snd) {
+    try { snd.currentTime = 0; snd.play(); } catch(e) {}
+}
+
+function toggleMusica() {
+    if (!musicaActiva) { musica.play(); document.getElementById('btn-musica').innerText = "🔊"; }
+    else               { musica.pause(); document.getElementById('btn-musica').innerText = "🔇"; }
+    musicaActiva = !musicaActiva;
+}
+
+// ════════════════════════════════════════════
+//  HELPERS
+// ════════════════════════════════════════════
+function fmt(n) {
+    n = Math.floor(n);
+    if (n >= 1e9) return (n/1e9).toFixed(2) + "B";
+    if (n >= 1e6) return (n/1e6).toFixed(2) + "M";
+    if (n >= 1e3) return (n/1e3).toFixed(1) + "K";
+    return n.toLocaleString('es-CL');
+}
+
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ════════════════════════════════════════════
+//  CALCULAR BONOS DE EDIFICIOS
+// ════════════════════════════════════════════
+function recalcularBonos() {
+    state.bonos = {
+        clickMult:       1.0,
+        empleadoMult:    1.0,
+        descuentoMejoras:1.0,
+        globalMult:      1.0,
+        critMult:        5.0,
+    };
+    edificiosData.forEach(ed => {
+        if (state.edificios[ed.id]) {
+            state.bonos[ed.efecto] = ed.valor;
+        }
+    });
+    state.critMultiplier = state.bonos.critMult;
+}
+
+// ════════════════════════════════════════════
+//  CALCULAR PROD/SEG
+// ════════════════════════════════════════════
+function calcularProdPS() {
+    let total = 0;
+    empleadosData.forEach(e => {
+        const emp = state.empleados[e.id];
+        if (emp.cantidad > 0) {
+            // prod/seg = baseProd * cantidad * nivel * bonos
+            const prodEmp = e.basePS * emp.cantidad * emp.nivel
+                          * state.bonos.empleadoMult
+                          * state.multi
+                          * state.bonos.globalMult
+                          * state.prestigeMult;
+            total += prodEmp;
+        }
+    });
+    state.prodPS = total;
+    return total;
+}
+
+// ════════════════════════════════════════════
+//  ACTUALIZAR UI
+// ════════════════════════════════════════════
+function actualizarUI() {
+    document.getElementById('val-dinero').textContent = fmt(state.dinero);
+    document.getElementById('val-gps').textContent    = fmt(calcularProdPS());
+
+    const porcentaje = Math.min((state.progreso / state.meta) * 100, 100);
+    document.getElementById('barra-int').style.height = porcentaje + '%';
+
+    // Mejoras
+    const desc = state.bonos.descuentoMejoras;
+    const pFuerza = Math.floor(state.precios.fuerza * desc);
+    const pCrit   = Math.floor(state.precios.crit   * desc);
+    const pMeta   = Math.floor(state.precios.meta   * desc);
+
+    document.getElementById('costo-fuerza').textContent = `$${fmt(pFuerza)}`;
+    document.getElementById('costo-crit').textContent   = `Chance: ${state.critChance}% | $${fmt(pCrit)}`;
+    document.getElementById('costo-meta').textContent   = `Dificultad: ×${state.metaGrowth.toFixed(1)} | $${fmt(pMeta)}`;
+
+    document.getElementById('lvl-fuerza').textContent = `Nv.${state.fuerza}`;
+    document.getElementById('lvl-crit').textContent   = `${state.critChance}%`;
+    document.getElementById('lvl-meta').textContent   = `×${state.metaGrowth.toFixed(1)}`;
+
+    document.getElementById('btn-buy-fuerza').disabled = state.dinero < pFuerza;
+    document.getElementById('btn-buy-crit').disabled   = state.dinero < pCrit || state.critChance >= 50;
+    document.getElementById('btn-buy-meta').disabled   = state.dinero < pMeta || state.metaGrowth <= 0.2;
+
+    // Skin y rango
+    const skinActual = skinsData.find(s => s.id === state.skinActual);
+    document.getElementById('rango-txt').textContent =
+        `${skinActual.nombre} (×${state.multi.toFixed(1)})`;
+
+    // Skins botones
+    skinsData.forEach(sk => {
+        const btn = document.getElementById(`btn-skin-${sk.id}`);
+        if (!btn) return;
+        if (state.skinActual >= sk.id) { btn.disabled = true; btn.textContent = "✔ TUYA"; }
+        else { btn.disabled = state.dinero < sk.precio; btn.textContent = "COMPRAR"; }
+    });
+
+    // Empleados botones
+    empleadosData.forEach(e => {
+        const emp   = state.empleados[e.id];
+        const btnC  = document.getElementById(`btn-contratar-${e.id}`);
+        const btnN  = document.getElementById(`btn-nivel-${e.id}`);
+        const lblC  = document.getElementById(`lbl-contratar-${e.id}`);
+        const lblN  = document.getElementById(`lbl-nivel-${e.id}`);
+        const cntEl = document.getElementById(`cnt-${e.id}`);
+
+        if (btnC) btnC.disabled = state.dinero < empPrecios[e.id];
+        if (btnN) btnN.disabled = state.dinero < empPreciosNivel[e.id];
+        if (lblC) lblC.textContent = `$${fmt(empPrecios[e.id])}`;
+        if (lblN) lblN.textContent = `Nivel ${emp.nivel} → ${emp.nivel+1} | $${fmt(empPreciosNivel[e.id])}`;
+        if (cntEl) cntEl.textContent = `${emp.cantidad} contratados · Nv.${emp.nivel}`;
+    });
+
+    // Edificios botones
+    edificiosData.forEach(ed => {
+        const btn = document.getElementById(`btn-edif-${ed.id}`);
+        if (!btn) return;
+        if (state.edificios[ed.id]) { btn.disabled = true; btn.textContent = "✔ ACTIVO"; }
+        else { btn.disabled = state.dinero < ed.precio; btn.textContent = "CONSTRUIR"; }
+    });
+
+    // Bubbles de empleados en pantalla
+    actualizarBubbles();
+    actualizarEdificiosBadges();
+}
+
+function actualizarBubbles() {
+    const cont = document.getElementById('empleados-activos');
+    cont.innerHTML = '';
+    empleadosData.forEach(e => {
+        const emp = state.empleados[e.id];
+        if (emp.cantidad > 0) {
+            const div = document.createElement('div');
+            div.className = 'emp-bubble';
+            const ps = (e.basePS * emp.cantidad * emp.nivel * state.bonos.empleadoMult * state.multi * state.bonos.globalMult * state.prestigeMult).toFixed(1);
+            div.innerHTML = `${e.emoji} ×${emp.cantidad} <span style="color:var(--green);font-size:0.9em">+${ps}/s</span>`;
+            cont.appendChild(div);
+        }
+    });
+}
+
+function actualizarEdificiosBadges() {
+    const cont = document.getElementById('edificios-activos');
+    cont.innerHTML = '';
+    edificiosData.forEach(ed => {
+        if (state.edificios[ed.id]) {
+            const span = document.createElement('span');
+            span.className = 'edif-badge';
+            span.textContent = ed.emoji;
+            span.title = ed.nombre;
+            cont.appendChild(span);
+        }
+    });
+}
+
+// ════════════════════════════════════════════
+//  MECÁNICA DE CLICK
+// ════════════════════════════════════════════
+function clickFemboy(e) {
+    if (e) e.preventDefault();
+    playSound(sfxClick);
+
+    const now = Date.now();
+    if (now - state.lastClickTime < 300) state.racha++;
+    else state.racha = Math.max(0, state.racha - 1);
+    state.lastClickTime = now;
+    if (state.racha > 15) activarClimax();
+
+    const cont = document.getElementById('femboy-container');
+    cont.classList.remove('click-anim');
+    void cont.offsetWidth;
+    cont.classList.add('click-anim');
+
+    let ganado = state.fuerza * state.multi * state.bonos.clickMult * state.bonos.globalMult * state.prestigeMult;
+    let esCrit = false;
+
+    if (state.critChance > 0 && Math.random() * 100 < state.critChance) {
+        ganado *= state.critMultiplier;
+        esCrit = true;
+        playSound(sfxCritico);
+    }
+
+    if (state.isClimax) ganado *= 3;
+
+    state.progreso += ganado;
+    spawnFloat(`+${fmt(ganado)}`, esCrit ? 'crit' : '');
+    chequearVenta();
+    actualizarUI();
+
+    // Bounce dinero
+    const d = document.getElementById('dinero-display');
+    d.style.transform = "scale(1.12)";
+    setTimeout(() => d.style.transform = "scale(1)", 80);
+}
+
+function activarClimax() {
+    if (state.isClimax) return;
+    state.isClimax = true;
+    document.body.classList.add('climax-active');
+    document.getElementById('climax-alert').style.display = "block";
+    const timer = setInterval(() => {
+        state.racha -= 2;
+        if (state.racha <= 0) {
+            state.isClimax = false;
+            document.body.classList.remove('climax-active');
+            document.getElementById('climax-alert').style.display = "none";
+            clearInterval(timer);
+        }
+    }, 500);
+}
+
+function chequearVenta() {
+    while (state.progreso >= state.meta) {
+        state.dinero += 15 * state.multi * state.bonos.globalMult * state.prestigeMult;
+        state.progreso -= state.meta;
+        state.meta += state.metaGrowth;
+    }
+}
+
+// ════════════════════════════════════════════
+//  FLOAT TEXT
+// ════════════════════════════════════════════
+function spawnFloat(texto, tipo = '') {
+    const el = document.createElement('div');
+    el.className = 'float-text ' + tipo;
+    el.textContent = texto;
+    el.style.left = (Math.random() * 55 + 20) + '%';
+    el.style.top  = (Math.random() * 25 + 25) + '%';
+    document.getElementById('main-game').appendChild(el);
+    setTimeout(() => el.remove(), 900);
+}
+
+// ════════════════════════════════════════════
+//  COMPRAS
+// ════════════════════════════════════════════
+function comprarMejora(tipo) {
+    const desc = state.bonos.descuentoMejoras;
+    const precios = {
+        fuerza: Math.floor(state.precios.fuerza * desc),
+        crit:   Math.floor(state.precios.crit   * desc),
+        meta:   Math.floor(state.precios.meta   * desc),
+    };
+    if (state.dinero < precios[tipo]) return;
+    state.dinero -= precios[tipo];
+
+    if (tipo === 'fuerza') {
+        state.fuerza++;
+        state.precios.fuerza = Math.floor(state.precios.fuerza * 1.5);
+        showToast(`💪 ¡Fuerza nivel ${state.fuerza}!`);
+    }
+    if (tipo === 'crit') {
+        state.critChance = Math.min(state.critChance + 5, 50);
+        state.precios.crit = Math.floor(state.precios.crit * 3);
+        showToast(`🎯 ¡Crítico al ${state.critChance}%!`);
+    }
+    if (tipo === 'meta') {
+        state.metaGrowth = Math.max(state.metaGrowth * 0.8, 0.2);
+        state.precios.meta = Math.floor(state.precios.meta * 2.5);
+        showToast(`🏺 ¡Silo mejorado!`);
+    }
+    actualizarUI();
+}
+
+function contratarEmpleado(id) {
+    const costo = empPrecios[id];
+    if (state.dinero < costo) return;
+    state.dinero -= costo;
+    state.empleados[id].cantidad++;
+    empPrecios[id] = Math.floor(empPrecios[id] * 2.0); // cada contrato sube el precio
+    const ed = empleadosData.find(e => e.id === id);
+    showToast(`${ed.emoji} ¡${ed.nombre} contratado!`);
+    playSound(sfxCompra);
+    actualizarUI();
+}
+
+function subirNivelEmpleado(id) {
+    const costo = empPreciosNivel[id];
+    if (state.dinero < costo) return;
+    if (state.empleados[id].cantidad === 0) {
+        showToast("¡Primero contrata uno!");
+        return;
+    }
+    state.dinero -= costo;
+    state.empleados[id].nivel++;
+    empPreciosNivel[id] = Math.floor(empPreciosNivel[id] * 2.5);
+    const ed = empleadosData.find(e => e.id === id);
+    showToast(`${ed.emoji} ¡${ed.nombre} nivel ${state.empleados[id].nivel}!`);
+    actualizarUI();
+}
+
+function comprarEdificio(id) {
+    const ed = edificiosData.find(e => e.id === id);
+    if (!ed || state.edificios[id] || state.dinero < ed.precio) return;
+    state.dinero -= ed.precio;
+    state.edificios[id] = true;
+    recalcularBonos();
+    showToast(`${ed.emoji} ¡${ed.nombre} construido!`);
+    actualizarUI();
+}
+
+function comprarSkin(id) {
+    const skin = skinsData.find(s => s.id === id);
+    if (!skin || state.dinero < skin.precio) return;
+    state.dinero -= skin.precio;
+    state.skinActual = id;
+    state.multi = skin.mult;
+    document.getElementById('femboy-sprite').src = skin.img;
+    showToast(`👗 ¡Skin ${skin.nombre} activada!`);
+    actualizarUI();
+}
+
+// ════════════════════════════════════════════
+//  PRESTIGE
+// ════════════════════════════════════════════
+function mostrarPrestige() {
+    cerrarPaneles();
+    document.getElementById('prestige-banner').classList.add('show');
+}
+function cerrarPrestige() {
+    document.getElementById('prestige-banner').classList.remove('show');
+}
+function hacerPrestige() {
+    state.prestigeCount++;
+    state.prestigeMult = 1.0 + (state.prestigeCount * 0.5);
+
+    // Resetear todo menos prestige y skins
+    state.dinero    = 0;
+    state.progreso  = 0;
+    state.meta      = 100;
+    state.metaGrowth = 5;
+    state.fuerza    = 1;
+    state.critChance = 0;
+    state.precios   = { fuerza: 10, crit: 500, meta: 2000 };
+    state.racha     = 0;
+    state.isClimax  = false;
+    state.empleados = {
+        junior:  { cantidad: 0, nivel: 1 },
+        senior:  { cantidad: 0, nivel: 1 },
+        experto: { cantidad: 0, nivel: 1 },
+        manager: { cantidad: 0, nivel: 1 },
+    };
+    state.edificios = {};
+    recalcularBonos();
+
+    empleadosData.forEach(e => {
+        empPrecios[e.id]      = e.baseCosto;
+        empPreciosNivel[e.id] = e.costoSubir;
+    });
+
+    document.body.classList.remove('climax-active');
+    document.getElementById('climax-alert').style.display = "none";
+
+    cerrarPrestige();
+    showToast(`⭐ Prestige ${state.prestigeCount}! Mult ×${state.prestigeMult.toFixed(1)}`);
+    actualizarUI();
+}
+
+// ════════════════════════════════════════════
+//  PANELES / TABS
+// ════════════════════════════════════════════
+const panelIds = ['panel-mejoras','panel-empleados','panel-edificios','panel-skins'];
+let panelActivo = null;
+
+function cerrarPaneles() {
+    panelIds.forEach(id => document.getElementById(id).classList.remove('open'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    panelActivo = null;
+}
+
+function openPanel(id, btn) {
+    if (panelActivo === id) {
+        cerrarPaneles();
+        return;
+    }
+    cerrarPaneles();
+    document.getElementById(id).classList.add('open');
+    if (btn) btn.classList.add('active');
+    panelActivo = id;
+}
+
+// ════════════════════════════════════════════
+//  GENERAR LISTA DE EMPLEADOS
+// ════════════════════════════════════════════
+function generarUIEmpleados() {
+    const cont = document.getElementById('lista-empleados');
+    cont.innerHTML = '';
+    empleadosData.forEach(e => {
+        const ps = e.basePS;
+        cont.innerHTML += `
+        <div class="item-card">
+            <div class="item-emoji">${e.emoji}</div>
+            <div class="item-info">
+                <div class="item-name">${e.nombre}</div>
+                <div class="item-desc">${e.desc}<br>Produce ${ps}/seg base</div>
+                <div class="item-owned" id="cnt-${e.id}">0 contratados · Nv.1</div>
+                <div class="item-cost" id="lbl-contratar-${e.id}">$${fmt(empPrecios[e.id])}</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+                <button class="btn-buy green" id="btn-contratar-${e.id}" onclick="contratarEmpleado('${e.id}')">+1 CONTRATAR</button>
+                <button class="btn-buy blue" id="btn-nivel-${e.id}" onclick="subirNivelEmpleado('${e.id}')" style="font-size:0.75em;padding:7px 8px" title="Sube el nivel de todos tus empleados de este tipo">⬆ SUBIR NIV.</button>
+            </div>
+        </div>
+        <div style="font-size:0.73em;color:#aaa;padding:0 4px 10px;margin-top:-6px" id="lbl-nivel-${e.id}">Nivel 1 → 2 | $${fmt(empPreciosNivel[e.id])}</div>
+        `;
+    });
+}
+
+// ════════════════════════════════════════════
+//  GENERAR LISTA DE EDIFICIOS
+// ════════════════════════════════════════════
+function generarUIEdificios() {
+    const cont = document.getElementById('lista-edificios');
+    cont.innerHTML = '';
+    edificiosData.forEach(ed => {
+        cont.innerHTML += `
+        <div class="item-card">
+            <div class="item-emoji">${ed.emoji}</div>
+            <div class="item-info">
+                <div class="item-name">${ed.nombre}</div>
+                <div class="item-desc">${ed.desc}</div>
+                <div class="item-cost">$${fmt(ed.precio)}</div>
+            </div>
+            <button class="btn-buy blue" id="btn-edif-${ed.id}" onclick="comprarEdificio('${ed.id}')">CONSTRUIR</button>
+        </div>`;
+    });
+}
+
+// ════════════════════════════════════════════
+//  GENERAR LISTA DE SKINS
+// ════════════════════════════════════════════
+function generarUISkins() {
+    const cont = document.getElementById('lista-skins');
+    cont.innerHTML = '';
+    skinsData.forEach(sk => {
+        cont.innerHTML += `
+        <div class="item-card">
+            <div class="item-emoji">👗</div>
+            <div class="item-info">
+                <div class="item-name">${sk.nombre}</div>
+                <div class="item-desc">Multiplica todos los ingresos ×${sk.mult.toFixed(1)}</div>
+                <div class="item-cost">${sk.precio === 0 ? 'Gratis' : '$' + fmt(sk.precio)}</div>
+            </div>
+            <button class="btn-buy" style="background:#9c27b0" id="btn-skin-${sk.id}" onclick="comprarSkin(${sk.id})">COMPRAR</button>
+        </div>`;
+    });
+}
+
+// ════════════════════════════════════════════
+//  LOOP AUTOMÁTICO (empleados producen)
+// ════════════════════════════════════════════
+const TICK = 100; // ms
+
+setInterval(() => {
+    const ps = calcularProdPS();
+    if (ps > 0) {
+        const ganado = (ps * TICK / 1000);
+        state.progreso += ganado;
+
+        // Solo mostrar float auto ocasionalmente (no cada tick, spam visual)
+        if (Math.random() < 0.03 && ganado > 0.5) {
+            spawnFloat(`+${fmt(ganado)}/s`, 'auto');
+        }
+
+        chequearVenta();
+        actualizarUI();
+    }
+}, TICK);
+
+// ════════════════════════════════════════════
+//  EVENTOS DE CLICK
+// ════════════════════════════════════════════
+const femboy = document.getElementById('femboy-container');
+femboy.addEventListener('touchstart', clickFemboy, { passive: false });
+femboy.addEventListener('mousedown', clickFemboy);
+
+// ════════════════════════════════════════════
+//  INICIALIZAR
+// ════════════════════════════════════════════
+generarUIEmpleados();
+generarUIEdificios();
+generarUISkins();
+recalcularBonos();
+actualizarUI();
+
+// Abrir panel de mejoras por defecto al cargar (ya está en active)
+// No auto-open para no tapar el personaje
+</script>
+</body>
+</html>
