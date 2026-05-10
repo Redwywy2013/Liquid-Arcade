@@ -19,17 +19,19 @@
   --purple:#a78bfa;
   --orange:#f97316;
   --red:#ef4444;
+  --yellow:#facc15;
+  --pink:#ec4899;
 }
 body{
   margin:0;
   min-height:100vh;
-  overflow:hidden;
+  overflow:auto;
   color:var(--text);
   font-family:system-ui,sans-serif;
   background:
-    radial-gradient(circle at 18% 18%,rgba(56,189,248,.22),transparent 28%),
-    radial-gradient(circle at 86% 22%,rgba(34,197,94,.16),transparent 28%),
-    radial-gradient(circle at 50% 100%,rgba(167,139,250,.14),transparent 34%),
+    radial-gradient(circle at 50% 0%,rgba(56,189,248,.18),transparent 26%),
+    radial-gradient(circle at 15% 25%,rgba(34,197,94,.12),transparent 24%),
+    radial-gradient(circle at 85% 35%,rgba(167,139,250,.12),transparent 26%),
     radial-gradient(circle at 20% 20%,#143454,#07111f 45%,#020617);
 }
 body:before{
@@ -38,346 +40,387 @@ body:before{
   inset:0;
   pointer-events:none;
   background:
-    linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);
-  background-size:44px 44px;
+    linear-gradient(rgba(255,255,255,.026) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.026) 1px,transparent 1px);
+  background-size:42px 42px;
   mask-image:radial-gradient(circle at center,black,transparent 80%);
 }
 .app{
   position:relative;
   z-index:1;
-  min-height:100vh;
+  width:min(1540px,calc(100vw - 26px));
+  height:calc(100vh - 26px);
+  min-height:0;
+  margin:13px auto;
   display:grid;
-  grid-template-columns:1fr 420px;
-  gap:22px;
-  padding:22px;
-}
-.main{
-  display:flex;
-  flex-direction:column;
-  min-width:0;
+  grid-template-rows:auto auto 1fr;
+  gap:12px;
+  padding:14px;
+  border:1px solid rgba(148,163,184,.28);
+  border-radius:28px;
+  background:rgba(2,6,23,.48);
+  box-shadow:0 24px 90px rgba(0,0,0,.52),inset 0 0 90px rgba(56,189,248,.04);
+  backdrop-filter:blur(14px);
 }
 .hero{
-  background:var(--panel);
-  border:1px solid var(--border);
-  border-radius:28px;
-  padding:24px;
-  box-shadow:0 20px 70px rgba(0,0,0,.45),0 0 55px rgba(56,189,248,.12);
-  backdrop-filter:blur(12px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  min-height:56px;
 }
-.kicker{
-  color:var(--muted);
-  font-size:12px;
-  font-weight:900;
-  text-transform:uppercase;
-  letter-spacing:.14em;
+.logo-mark{
+  width:52px;
+  height:34px;
+  filter:drop-shadow(0 0 18px rgba(56,189,248,.75));
 }
 h1{
-  margin:6px 0 8px;
-  font-size:clamp(38px,6vw,78px);
-  letter-spacing:-.07em;
-  line-height:.9;
-}
-.subtitle{
-  max-width:760px;
   margin:0;
-  color:#cbd5e1;
-  font-size:16px;
-  line-height:1.55;
+  font-size:clamp(28px,3vw,42px);
+  letter-spacing:-.06em;
+  line-height:1;
 }
+.kicker,.subtitle{display:none}
 .category-shell{
   position:relative;
-  margin:18px 0 0;
-  padding:12px 12px 0;
-  border-radius:22px 22px 0 0;
-  background:rgba(2,6,23,.35);
-  border:1px solid rgba(148,163,184,.14);
-  border-bottom:none;
-}
-.tab-panel{
-  margin-top:-1px;
-  padding-top:18px;
-  border-top:1px solid rgba(148,163,184,.14);
-}
-
-  margin:18px 0 0;
-  border-bottom:1px solid rgba(148,163,184,.16);
+  padding:0 18px;
+  border-bottom:1px solid rgba(59,130,246,.45);
 }
 .category-tabs{
-  display:flex;
-  gap:8px;
-  padding:0 10px;
-  overflow-x:auto;
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  gap:0;
+  align-items:end;
+  overflow:hidden;
 }
 .category-tab{
   position:relative;
-  padding:12px 18px;
-  border:none;
-  border-radius:16px 16px 0 0;
-  background:rgba(15,23,42,.45);
+  height:70px;
+  padding:0 16px;
+  border:1px solid rgba(148,163,184,.18);
+  border-bottom:none;
+  border-radius:22px 22px 0 0;
+  background:linear-gradient(180deg,rgba(15,23,42,.72),rgba(2,6,23,.76));
   color:var(--muted);
-  font-weight:900;
-  letter-spacing:.02em;
+  font-size:15px;
+  font-weight:950;
+  letter-spacing:.01em;
   cursor:pointer;
-  transition:all .2s ease;
+  transform:translateY(12px) skewX(-12deg);
+  transition:all .22s ease;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+}
+.category-tab span{
+  display:inline-flex;
+  gap:9px;
+  align-items:center;
+  transform:skewX(12deg);
 }
 .category-tab:hover{
-  background:rgba(30,41,59,.82);
   color:var(--text);
+  background:linear-gradient(180deg,rgba(30,41,59,.9),rgba(2,6,23,.82));
 }
 .category-tab.active{
-  background:rgba(15,23,42,.95);
+  z-index:2;
   color:var(--text);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.05),
-    0 -1px 0 rgba(56,189,248,.3),
-    0 0 30px rgba(56,189,248,.12);
+  border-color:rgba(59,130,246,.72);
+  background:linear-gradient(180deg,rgba(15,23,42,.98),rgba(2,6,23,.95));
+  box-shadow:0 -4px 24px rgba(59,130,246,.24),inset 0 1px 0 rgba(255,255,255,.08);
+  transform:translateY(2px) skewX(-12deg);
 }
 .category-tab.active::after{
   content:"";
   position:absolute;
-  left:12px;
-  right:12px;
+  left:20px;
+  right:20px;
   bottom:0;
   height:3px;
   border-radius:999px;
-  background:linear-gradient(90deg,#38bdf8,#22c55e);
+  background:linear-gradient(90deg,#38bdf8,#3b82f6);
+  box-shadow:0 0 18px rgba(56,189,248,.85);
 }
-.grid{
-  flex:1;
+.content-shell{
   display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
+  grid-template-columns:330px 1fr;
   gap:18px;
-  align-content:center;
-  padding:22px 0 0;
-}
-.card{
-  position:relative;
-  min-height:260px;
-  overflow:hidden;
-  background:linear-gradient(180deg,rgba(15,23,42,.82),rgba(2,6,23,.55));
-  border:1px solid rgba(148,163,184,.22);
-  border-radius:28px;
-  padding:20px;
-  box-shadow:0 20px 70px rgba(0,0,0,.38), inset 0 0 60px rgba(56,189,248,.06);
-  backdrop-filter:blur(12px);
-  cursor:pointer;
-  transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease;
-}
-.card:hover,.card.active{
-  transform:translateY(-5px);
-  border-color:rgba(56,189,248,.58);
-  box-shadow:0 26px 80px rgba(0,0,0,.48),0 0 50px rgba(56,189,248,.2);
-}
-.card:before{
-  content:"";
-  position:absolute;
-  inset:-2px;
-  background:radial-gradient(circle at 30% 20%,var(--glow),transparent 36%);
-  opacity:.55;
-  pointer-events:none;
-}
-.icon{
-  position:relative;
-  width:76px;
-  height:76px;
+  min-height:0;
+  padding:14px;
+  border:1px solid rgba(59,130,246,.34);
   border-radius:24px;
-  display:grid;
-  place-items:center;
-  margin-bottom:22px;
-  background:rgba(2,6,23,.5);
-  border:1px solid rgba(148,163,184,.18);
-}
-.icon svg{
-  width:46px;
-  height:46px;
-  filter:drop-shadow(0 0 14px var(--glow));
-}
-.card h2{
-  margin:0 0 8px;
-  font-size:30px;
-  letter-spacing:-.05em;
-}
-.card p{
-  margin:0;
-  color:#cbd5e1;
-  font-size:14px;
-  line-height:1.45;
-}
-.tag{
-  position:absolute;
-  top:18px;
-  right:18px;
-  color:var(--muted);
-  font-size:11px;
-  text-transform:uppercase;
-  letter-spacing:.12em;
-  font-weight:900;
-}
-.drawer{
-  position:relative;
+  background:rgba(2,6,23,.36);
+  box-shadow:inset 0 0 70px rgba(56,189,248,.035);
+  overflow:hidden;
 }
 .panel{
-  height:calc(100vh - 44px);
-  background:rgba(15,23,42,.86);
-  border:1px solid rgba(148,163,184,.28);
-  border-radius:28px;
-  padding:22px;
-  box-shadow:0 20px 70px rgba(0,0,0,.45),0 0 45px rgba(56,189,248,.12);
-  backdrop-filter:blur(12px);
+  min-height:0;
+  max-height:100%;
+  background:linear-gradient(180deg,rgba(15,23,42,.72),rgba(2,6,23,.64));
+  border:1px solid rgba(148,163,184,.20);
+  border-radius:24px;
+  padding:18px;
+  box-shadow:0 20px 70px rgba(0,0,0,.35),inset 0 0 60px rgba(56,189,248,.04);
   display:flex;
   flex-direction:column;
+  overflow-y:auto;
+  scrollbar-width:thin;
 }
 .panel-art{
-  height:220px;
-  border-radius:24px;
-  border:1px solid rgba(148,163,184,.18);
-  background:
-    radial-gradient(circle at 50% 50%,var(--selected-glow),transparent 34%),
-    linear-gradient(180deg,rgba(2,6,23,.3),rgba(2,6,23,.7));
+  height:115px;
+  border-radius:22px;
   display:grid;
   place-items:center;
-  margin-bottom:18px;
+  margin-bottom:14px;
+  background:radial-gradient(circle at 50% 50%,color-mix(in srgb,var(--selected-glow),transparent 52%),transparent 42%);
 }
 .panel-art svg{
-  width:120px;
-  height:120px;
+  width:82px;
+  height:82px;
   filter:drop-shadow(0 0 24px var(--selected-glow));
 }
 .panel h2{
   margin:0 0 10px;
-  font-size:42px;
-  letter-spacing:-.06em;
+  font-size:28px;
+  letter-spacing:-.055em;
 }
 .panel p{
   margin:0;
   color:#cbd5e1;
-  line-height:1.55;
+  line-height:1.45;
+  font-size:14px;
 }
 .facts{
   display:grid;
   grid-template-columns:1fr 1fr;
-  gap:10px;
-  margin:18px 0;
+  gap:9px;
+  margin:14px 0;
+}
+.box{
+  background:rgba(2,6,23,.45);
+  border:1px solid rgba(148,163,184,.16);
+  border-radius:14px;
+  padding:10px;
+}
+.box span{
+  display:block;
+  color:var(--muted);
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+}
+.box b{
+  display:block;
+  margin-top:3px;
+  font-size:14px;
 }
 .feature-list{
   display:grid;
-  gap:10px;
-  margin:0 0 18px;
+  gap:8px;
+  margin:0 0 14px;
+  overflow:auto;
+  scrollbar-width:thin;
 }
 .feature{
   display:flex;
-  gap:10px;
+  gap:9px;
   align-items:flex-start;
-  background:rgba(2,6,23,.35);
-  border:1px solid rgba(148,163,184,.14);
-  border-radius:16px;
-  padding:11px;
+  background:rgba(2,6,23,.34);
+  border:1px solid rgba(148,163,184,.13);
+  border-radius:13px;
+  padding:9px;
 }
 .feature-dot{
-  width:10px;
-  height:10px;
-  flex:0 0 10px;
+  width:8px;
+  height:8px;
+  flex:0 0 8px;
   margin-top:5px;
   border-radius:999px;
   background:var(--selected-glow);
   box-shadow:0 0 16px var(--selected-glow);
 }
-.feature b{
-  display:block;
-  font-size:14px;
-  margin-bottom:2px;
-}
-.feature span{
-  display:block;
-  color:#94a3b8;
-  font-size:12px;
-  line-height:1.35;
-}
+.feature b{display:block;font-size:13px;margin-bottom:1px}
+.feature span{display:block;color:#94a3b8;font-size:12px;line-height:1.3}
 .sidebar-footer{
   margin-top:auto;
   display:grid;
-  gap:12px;
-}
-.box{
-  background:rgba(2,6,23,.45);
-  border:1px solid rgba(148,163,184,.16);
-  border-radius:16px;
-  padding:12px;
-}
-.box span{
-  display:block;
-  color:var(--muted);
-  font-size:12px;
-  text-transform:uppercase;
-  letter-spacing:.07em;
-}
-.box b{
-  display:block;
-  margin-top:4px;
-  font-size:18px;
+  gap:10px;
 }
 .play{
-  margin-top:0;
   width:100%;
   padding:14px 18px;
-  border:0;
+  border:1px solid rgba(59,130,246,.8);
   border-radius:16px;
   color:white;
   font-weight:950;
   font-size:16px;
-  letter-spacing:.04em;
+  letter-spacing:.03em;
   cursor:pointer;
   text-decoration:none;
   text-align:center;
-  background:linear-gradient(135deg,#0ea5e9,#22c55e);
-  box-shadow:0 0 32px rgba(34,197,94,.22);
+  background:linear-gradient(135deg,rgba(37,99,235,.96),rgba(29,78,216,.68));
+  box-shadow:0 0 32px rgba(59,130,246,.28),inset 0 1px 0 rgba(255,255,255,.16);
 }
 .play:hover{filter:brightness(1.15)}
-@media(max-width:1250px){
-  .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.tab-panel{
+  min-height:0;
+  overflow:hidden;
 }
-@media(max-width:1050px){
+.grid{
+  height:100%;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:14px;
+  align-content:start;
+  overflow-y:auto;
+  scrollbar-width:thin;
+  padding-right:8px;
+}
+.grid.compact .card{min-height:0}
+.grid.scrollable{
+  max-height:100%;
+  overflow-y:auto;
+  padding-right:8px;
+  padding-bottom:12px;
+}
+.card{
+  position:relative;
+  min-height:190px;
+  overflow:hidden;
+  background:linear-gradient(180deg,rgba(15,23,42,.70),rgba(2,6,23,.62));
+  border:1px solid rgba(148,163,184,.18);
+  border-radius:20px;
+  padding:16px;
+  box-shadow:0 16px 48px rgba(0,0,0,.35),inset 0 0 50px rgba(56,189,248,.04);
+  backdrop-filter:blur(10px);
+  cursor:pointer;
+  transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;
+}
+.card:hover,.card.active{
+  transform:translateY(-3px);
+  border-color:var(--glow);
+  box-shadow:0 18px 54px rgba(0,0,0,.46),0 0 36px color-mix(in srgb,var(--glow),transparent 68%);
+}
+.card:before{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:47px;
+  width:68px;
+  height:68px;
+  transform:translate(-50%,-50%);
+  border-radius:999px;
+  background:radial-gradient(circle,color-mix(in srgb,var(--glow),transparent 48%) 0%,transparent 74%);
+  opacity:.75;
+  pointer-events:none;
+  filter:blur(8px);
+}
+.icon{
+  position:relative;
+  z-index:1;
+  width:62px;
+  height:62px;
+  border-radius:22px;
+  display:grid;
+  place-items:center;
+  margin:0 auto 10px;
+  background:rgba(2,6,23,.34);
+  box-shadow:
+    0 0 30px color-mix(in srgb,var(--glow),transparent 68%),
+    inset 0 0 20px rgba(255,255,255,.03);
+}
+.icon svg{
+  width:46px;
+  height:46px;
+  filter:drop-shadow(0 0 16px var(--glow));
+}
+.card h2{
+  position:relative;
+  margin:0 0 6px;
+  font-size:22px;
+  letter-spacing:-.045em;
+}
+.card p{
+  position:relative;
+  margin:0 0 10px;
+  color:#cbd5e1;
+  font-size:13px;
+  line-height:1.35;
+  display:-webkit-box;
+  -webkit-line-clamp:3;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+.tag{
+  position:absolute;
+  top:14px;
+  right:14px;
+  color:var(--glow);
+  border:1px solid color-mix(in srgb,var(--glow),transparent 50%);
+  background:color-mix(in srgb,var(--glow),transparent 88%);
+  border-radius:999px;
+  padding:3px 9px;
+  font-size:10px;
+  font-weight:900;
+}
+.card-route{
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  color:var(--glow);
+  font-weight:850;
+  font-size:13px;
+  margin-top:auto;
+}
+.card-route span:last-child{font-size:16px}
+@media(max-width:1250px){
+  .content-shell{grid-template-columns:280px 1fr}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .category-tab{font-size:13px;padding:0 10px}
+}
+@media(max-width:900px){
   body{overflow:auto}
-  .app{grid-template-columns:1fr;padding:14px}
-  .grid{grid-template-columns:1fr}
-  .panel{height:auto;min-height:420px}
+  .app{height:auto;min-height:100vh;width:100%;margin:0;border-radius:0}
+  .category-tabs{grid-template-columns:repeat(3,1fr);gap:6px;overflow:visible}
+  .category-tab{height:52px;transform:none;border-radius:16px}.category-tab span{transform:none}.category-tab.active{transform:none}
+  .content-shell{grid-template-columns:1fr;overflow:visible}
+  .panel{min-height:420px;max-height:none}.grid{grid-template-columns:1fr;overflow:visible}.grid.scrollable{max-height:none;overflow:visible}
 }
 </style>
 </head>
 <body>
 <div class="app">
-  <main class="main">
-    <section class="hero">
-      <div class="kicker">wyr3forrealz.org</div>
-      <h1>Liquid Arcade</h1>
-      <p class="subtitle">Interactive simulations, experiments, and arcade projects.</p>
-    </section>
+  <section class="hero">
+    <svg class="logo-mark" viewBox="0 0 100 64" fill="none"><path d="M8 32h22l9-20 18 42 12-30h23" stroke="#38bdf8" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8" cy="32" r="7" fill="#22c55e"/><circle cx="92" cy="24" r="7" fill="#22c55e"/></svg>
+    <h1>Liquid Arcade</h1>
+  </section>
 
-    <div class="category-shell">
-      <nav class="category-tabs" id="categoryTabs" aria-label="Project categories"></nav>
-    </div>
+  <div class="category-shell">
+    <nav class="category-tabs" id="categoryTabs" aria-label="Project categories"></nav>
+  </div>
+
+  <section class="content-shell">
+    <aside class="drawer">
+      <section class="panel">
+        <div class="panel-art" id="panelArt"></div>
+        <h2 id="panelTitle">Liquid Electrons</h2>
+        <p id="panelDesc">A slick circuit sandbox where batteries, resistors, LEDs, buzzers, motors, switches, and other parts can be dragged into a glowing workspace and tested like a tiny digital electronics bench.</p>
+        <div class="facts">
+          <div class="box"><span>Type</span><b id="panelType">Sandbox</b></div>
+          <div class="box"><span>Status</span><b>Ready</b></div>
+        </div>
+        <div class="feature-list" id="featureList"></div>
+        <div class="sidebar-footer">
+          <div class="box"><span>Launch</span><b id="launchPhrase">Complete the circuit.</b></div>
+          <a class="play" id="playBtn" href="/liquids/electrons/">▶ Launch Game</a>
+        </div>
+      </section>
+    </aside>
+
     <div class="tab-panel">
       <section class="grid" id="grid"></section>
     </div>
-  </main>
-
-  <aside class="drawer">
-    <section class="panel">
-      <div class="panel-art" id="panelArt"></div>
-      <h2 id="panelTitle">Liquid Electrons</h2>
-      <p id="panelDesc">A slick circuit sandbox where batteries, resistors, LEDs, buzzers, motors, switches, and other parts can be dragged into a glowing workspace and tested like a tiny digital electronics bench.</p>
-      <div class="facts">
-        <div class="box"><span>Type</span><b id="panelType">Sandbox</b></div>
-        <div class="box"><span>Status</span><b>Ready</b></div>
-      </div>
-      <div class="feature-list" id="featureList"></div>
-      <div class="sidebar-footer">
-        <div class="box"><span>Launch</span><b id="launchPhrase">Complete the circuit.</b></div>
-        <a class="play" id="playBtn" href="/liquids/electrons/">PLAY</a>
-      </div>
-    </section>
-  </aside>
+  </section>
 </div>
 
 <script>
@@ -535,6 +578,7 @@ function renderCard(game){
     <div class="icon">${game.icon}</div>
     <h2>${game.title}</h2>
     <p>${game.desc}</p>
+    <div class="card-route"><span>${game.route}</span><span>↗</span></div>
   `;
 
   card.addEventListener("click",()=>selectGame(game,card));
@@ -547,7 +591,7 @@ function renderCategoryTabs(){
     const tab=document.createElement("button");
     tab.className="category-tab";
     tab.type="button";
-    tab.innerHTML=`${category.icon} ${category.name}`;
+    tab.innerHTML=`<span>${category.icon} ${category.name}</span>`;
     tab.classList.toggle("active",category.name===activeCategory);
     tab.addEventListener("click",()=>{
       activeCategory=category.name;
@@ -561,6 +605,8 @@ function renderCategoryTabs(){
 function renderGrid(){
   grid.innerHTML="";
   const shown=games.filter(game=>game.categories.includes(activeCategory));
+  grid.classList.toggle("compact",shown.length>4);
+  grid.classList.toggle("scrollable",shown.length>8);
   shown.forEach(renderCard);
   selectGame(shown[0]||games[0],document.querySelector('.card'));
 }
