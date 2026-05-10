@@ -89,7 +89,7 @@ button:hover{transform:translateY(-2px);filter:brightness(1.1);box-shadow:0 0 24
   position:absolute;display:flex;align-items:center;justify-content:center;border-radius:22px;
   font-weight:1000;letter-spacing:-.05em;color:#1b1305;text-shadow:0 1px 0 rgba(255,255,255,.2);
   box-shadow:0 12px 30px rgba(0,0,0,.28),inset 0 0 22px rgba(255,255,255,.16);
-  transition:transform .18s cubic-bezier(.2,.9,.2,1),opacity .18s ease,filter .18s ease;
+  transition:transform var(--moveTime,150ms) cubic-bezier(.16,1,.22,1),opacity var(--moveTime,150ms) ease,filter var(--moveTime,150ms) ease;
   will-change:transform;
 }
 .tile.spawn{animation:spawn .22s cubic-bezier(.2,1.5,.2,1) both}
@@ -158,26 +158,62 @@ const $=id=>document.getElementById(id);
 const gridEl=$('grid'),tilesEl=$('tiles'),boardEl=$('board');
 const scoreEl=$('score'),bestEl=$('best'),movesEl=$('moves'),largestEl=$('largest'),statusEl=$('status'),progressBar=$('progressBar'),goalEl=$('goal'),goalLabel=$('goalLabel');
 const overlay=$('overlay'),overlayTitle=$('overlayTitle'),overlayText=$('overlayText');
-let board,score,moves,best=Number(localStorage.getItem('liquid2048Best')||0),won=false,keepGoing=false,history=[],tileId=1,sparkles=true,animMs=180,locked=false;
+let board,score,moves,best=Number(localStorage.getItem('liquid2048Best')||0),won=false,keepGoing=false,history=[],tileId=1,sparkles=true,animMs=120;
+let animTimer=null,tileEls=new Map(),metrics=null;
 const dirs={ArrowUp:[-1,0],KeyW:[-1,0],ArrowDown:[1,0],KeyS:[1,0],ArrowLeft:[0,-1],KeyA:[0,-1],ArrowRight:[0,1],KeyD:[0,1]};
 const tileColors={2:['#fef3c7','#1c1203'],4:['#fde68a','#1c1203'],8:['#facc15','#1c1203'],16:['#f59e0b','#1c1203'],32:['#fb923c','#1c1203'],64:['#f97316','#fff7d6'],128:['#fbbf24','#1c1203'],256:['#eab308','#1c1203'],512:['#ca8a04','#fff7d6'],1024:['#a16207','#fff7d6'],2048:['#fef08a','#1c1203'],4096:['#fcd34d','#1c1203'],8192:['#fff7ed','#1c1203']};
 function emptyBoard(){return Array.from({length:4},()=>Array(4).fill(null));}
 function makeTile(value,row,col){return {id:tileId++,value,row,col,prevRow:row,prevCol:col,merged:false,spawn:true};}
 function cloneBoard(b=board){return b.map(r=>r.map(t=>t?{...t}:null));}
 function saveState(){history=[{board:cloneBoard(),score,moves,won,keepGoing},...history].slice(0,1);}
-function restoreState(){if(!history.length||locked)return;const h=history.shift();board=h.board;score=h.score;moves=h.moves;won=h.won;keepGoing=h.keepGoing;render(true);updateStats();statusEl.textContent='Undo! Time wobble achieved.';}
-function start(){board=emptyBoard();score=0;moves=0;won=false;keepGoing=false;history=[];tileId=1;addRandom();addRandom();render(true);updateStats();hideOverlay();statusEl.textContent='Ready. Make the numbers smooch.';}
+function restoreState(){if(!history.length)return;finishAnimation();const h=history.shift();board=h.board;score=h.score;moves=h.moves;won=h.won;keepGoing=h.keepGoing;rebuildTiles(true);updateStats();statusEl.textContent='Undo! Time wobble achieved.';}
+function start(){board=emptyBoard();score=0;moves=0;won=false;keepGoing=false;history=[];tileId=1;tileEls.clear();tilesEl.innerHTML='';addRandom();addRandom();renderGrid();metrics=getMetrics();syncTiles(true);updateStats();hideOverlay();statusEl.textContent='Ready. Make the numbers smooch.';}
 function addRandom(){const empty=[];for(let r=0;r<4;r++)for(let c=0;c<4;c++)if(!board[r][c])empty.push([r,c]);if(!empty.length)return;const [r,c]=empty[Math.floor(Math.random()*empty.length)];board[r][c]=makeTile(Math.random()<.9?2:4,r,c);}
 function orderedPositions(dr,dc){const rows=[0,1,2,3],cols=[0,1,2,3];if(dr>0)rows.reverse();if(dc>0)cols.reverse();const pos=[];for(const r of rows)for(const c of cols)pos.push([r,c]);return pos;}
-function move(dr,dc){if(locked)return;locked=true;saveState();let moved=false,gained=0;for(const row of board)for(const t of row)if(t){t.prevRow=t.row;t.prevCol=t.col;t.merged=false;t.spawn=false;}const positions=orderedPositions(dr,dc);const mergedThisTurn=new Set();for(const [r,c] of positions){const tile=board[r][c];if(!tile)continue;let nr=r,nc=c;while(true){const tr=nr+dr,tc=nc+dc;if(tr<0||tr>3||tc<0||tc>3)break;const target=board[tr][tc];if(!target){nr=tr;nc=tc;continue;}if(target.value===tile.value&&!mergedThisTurn.has(target.id)){board[r][c]=null;target.value*=2;target.merged=true;target.prevRow=tile.prevRow;target.prevCol=tile.prevCol;mergedThisTurn.add(target.id);gained+=target.value;moved=true;break;}break;}if(board[r][c]===tile&&(nr!==r||nc!==c)){board[r][c]=null;board[nr][nc]=tile;tile.row=nr;tile.col=nc;moved=true;}}
-if(!moved){history.shift();statusEl.textContent=randomNope();render(false);setTimeout(()=>locked=false,animMs);return;}
-score+=gained;moves++;addRandom();render(false);updateStats();setTimeout(()=>locked=false,animMs+40);const largest=getLargest();if(largest>=Number(goalEl.value)&&!won&&!keepGoing){won=true;showOverlay('You Win!','You made '+largest+'. The board bows before you.');}else if(!canMove()){showOverlay('Game Over','No more moves. The tiles have unionized.');}else statusEl.textContent=gained?mergeText(gained):'Smooth move.';}
+function move(dr,dc){
+  if(animTimer)finishAnimation();
+  saveState();let moved=false,gained=0;for(const row of board)for(const t of row)if(t){t.prevRow=t.row;t.prevCol=t.col;t.merged=false;t.spawn=false;}const positions=orderedPositions(dr,dc);const mergedThisTurn=new Set();for(const [r,c] of positions){const tile=board[r][c];if(!tile)continue;let nr=r,nc=c;while(true){const tr=nr+dr,tc=nc+dc;if(tr<0||tr>3||tc<0||tc>3)break;const target=board[tr][tc];if(!target){nr=tr;nc=tc;continue;}if(target.value===tile.value&&!mergedThisTurn.has(target.id)){board[r][c]=null;target.value*=2;target.merged=true;target.prevRow=tile.prevRow;target.prevCol=tile.prevCol;mergedThisTurn.add(target.id);gained+=target.value;moved=true;break;}break;}if(board[r][c]===tile&&(nr!==r||nc!==c)){board[r][c]=null;board[nr][nc]=tile;tile.row=nr;tile.col=nc;moved=true;}}
+if(!moved){history.shift();statusEl.textContent=randomNope();syncTiles(false);startAnimationTimer();return;}
+score+=gained;moves++;addRandom();syncTiles(false);updateStats();startAnimationTimer();const largest=getLargest();if(largest>=Number(goalEl.value)&&!won&&!keepGoing){won=true;showOverlay('You Win!','You made '+largest+'. The board bows before you.');}else if(!canMove()){showOverlay('Game Over','No more moves. The tiles have unionized.');}else statusEl.textContent=gained?mergeText(gained):'Smooth move.';}
 function canMove(){for(let r=0;r<4;r++)for(let c=0;c<4;c++){const t=board[r][c];if(!t)return true;if(r<3&&board[r+1][c]?.value===t.value)return true;if(c<3&&board[r][c+1]?.value===t.value)return true;}return false;}
 function getLargest(){let m=0;for(const row of board)for(const t of row)if(t)m=Math.max(m,t.value);return m;}
+function startAnimationTimer(){clearTimeout(animTimer);animTimer=setTimeout(()=>{animTimer=null;},Math.max(20,animMs));}
+function finishAnimation(){if(!animTimer)return;clearTimeout(animTimer);animTimer=null;syncTiles(true);}
 function updateStats(){best=Math.max(best,score);localStorage.setItem('liquid2048Best',best);scoreEl.textContent=score;bestEl.textContent=best;movesEl.textContent=moves;const largest=getLargest();largestEl.textContent=largest;const goal=Number(goalEl.value);goalLabel.textContent='Goal: '+goal;progressBar.style.width=Math.min(100,Math.log2(largest)/Math.log2(goal)*100)+'%';}
-function render(immediate){gridEl.innerHTML='';for(let i=0;i<16;i++){const d=document.createElement('div');d.className='cell';gridEl.appendChild(d);}tilesEl.innerHTML='';const metrics=getMetrics();for(const row of board)for(const tile of row)if(tile)drawTile(tile,metrics,immediate);}
+function renderGrid(){gridEl.innerHTML='';for(let i=0;i<16;i++){const d=document.createElement('div');d.className='cell';gridEl.appendChild(d);}}
+function rebuildTiles(immediate){tileEls.clear();tilesEl.innerHTML='';metrics=getMetrics();syncTiles(immediate);}
+function syncTiles(immediate){metrics=getMetrics();const live=new Set();for(const row of board)for(const tile of row)if(tile){live.add(tile.id);drawTile(tile,metrics,immediate);}for(const [id,el] of tileEls){if(!live.has(id)){el.remove();tileEls.delete(id);}}}
 function getMetrics(){const rect=boardEl.getBoundingClientRect();const gap=parseFloat(getComputedStyle(boardEl).getPropertyValue('--gap'));const inner=rect.width-gap*2;const size=(inner-gap*3)/4;return {gap,size};}
-function drawTile(t,m,immediate){const d=document.createElement('div');d.className='tile';if(t.spawn&&!immediate)d.classList.add('spawn');if(t.merged&&!immediate)d.classList.add(t.value>=2048?'super':'merge');d.textContent=t.value;const [bg,fg]=tileColors[t.value]||['#fff7ed','#1c1203'];d.style.background=`linear-gradient(135deg,${bg},${shade(bg)})`;d.style.color=fg;d.style.fontSize=fontSize(t.value,m.size);d.style.width=m.size+'px';d.style.height=m.size+'px';const x=t.col*(m.size+m.gap),y=t.row*(m.size+m.gap);d.style.setProperty('--x',x+'px');d.style.setProperty('--y',y+'px');d.style.transitionDuration=animMs+'ms';if(immediate)d.style.transform=`translate(${x}px,${y}px)`;else{const sx=t.prevCol*(m.size+m.gap),sy=t.prevRow*(m.size+m.gap);d.style.transform=`translate(${sx}px,${sy}px)`;requestAnimationFrame(()=>{d.style.transform=`translate(${x}px,${y}px)`;});}tilesEl.appendChild(d);if(t.merged&&sparkles)setTimeout(()=>spark(t.row,t.col,m),animMs*.55);}
+function drawTile(t,m,immediate){
+  let d=tileEls.get(t.id);
+  const fresh=!d;
+  if(!d){d=document.createElement('div');d.className='tile';tileEls.set(t.id,d);tilesEl.appendChild(d);}
+  d.className='tile';
+  if(t.spawn&&!immediate)d.classList.add('spawn');
+  if(t.merged&&!immediate)d.classList.add(t.value>=2048?'super':'merge');
+  d.textContent=t.value;
+  const [bg,fg]=tileColors[t.value]||['#fff7ed','#1c1203'];
+  d.style.background=`linear-gradient(135deg,${bg},${shade(bg)})`;
+  d.style.color=fg;
+  d.style.fontSize=fontSize(t.value,m.size);
+  d.style.width=m.size+'px';
+  d.style.height=m.size+'px';
+  d.style.setProperty('--moveTime',animMs+'ms');
+  const x=t.col*(m.size+m.gap),y=t.row*(m.size+m.gap);
+  d.style.setProperty('--x',x+'px');
+  d.style.setProperty('--y',y+'px');
+  if(immediate){
+    d.style.transition='none';
+    d.style.transform=`translate(${x}px,${y}px)`;
+    d.offsetHeight;
+    d.style.transition='';
+  }else if(fresh||t.spawn){
+    d.style.transform=`translate(${x}px,${y}px)`;
+  }else{
+    d.style.transform=`translate(${x}px,${y}px)`;
+  }
+  if(t.merged&&sparkles)setTimeout(()=>spark(t.row,t.col,m),animMs*.35);
+}
 function fontSize(v,s){const digits=String(v).length;return Math.max(22,s*(digits<=2?.44:digits===3?.36:digits===4?.30:.24))+'px';}
 function shade(hex){const n=parseInt(hex.slice(1),16);let r=(n>>16)&255,g=(n>>8)&255,b=n&255;r=Math.min(255,r+24);g=Math.min(255,g+18);b=Math.min(255,b+8);return `rgb(${r},${g},${b})`;}
 function spark(r,c,m){const x=12+c*(m.size+m.gap)+m.size/2,y=12+r*(m.size+m.gap)+m.size/2;for(let i=0;i<10;i++){const s=document.createElement('div');s.style.position='absolute';s.style.left=x+'px';s.style.top=y+'px';s.style.width='6px';s.style.height='6px';s.style.borderRadius='50%';s.style.background=i%2?'#fff7ad':'#facc15';s.style.pointerEvents='none';s.style.opacity='1';s.style.transform='translate(-50%,-50%)';s.style.transition='transform .45s ease,opacity .45s ease';tilesEl.appendChild(s);const a=Math.PI*2*i/10,dist=30+Math.random()*30;requestAnimationFrame(()=>{s.style.transform=`translate(calc(-50% + ${Math.cos(a)*dist}px),calc(-50% + ${Math.sin(a)*dist}px)) scale(.2)`;s.style.opacity='0';});setTimeout(()=>s.remove(),500);}}
@@ -190,8 +226,8 @@ function simulate(dr,dc){const old=board,oldScore=score;board=cloneBoard(old);le
 for(const btn of document.querySelectorAll('.tab-btn'))btn.onclick=()=>{document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));btn.classList.add('active');$('tab-'+btn.dataset.tab).classList.add('active');};
 document.addEventListener('keydown',e=>{if(dirs[e.code]){e.preventDefault();const [dr,dc]=dirs[e.code];move(dr,dc);}});
 let touchStart=null;boardEl.addEventListener('pointerdown',e=>{touchStart={x:e.clientX,y:e.clientY};boardEl.setPointerCapture(e.pointerId);});boardEl.addEventListener('pointerup',e=>{if(!touchStart)return;const dx=e.clientX-touchStart.x,dy=e.clientY-touchStart.y;touchStart=null;if(Math.hypot(dx,dy)<24)return;if(Math.abs(dx)>Math.abs(dy))move(0,dx>0?1:-1);else move(dy>0?1:-1,0);});
-$('newGame').onclick=start;$('overlayNew').onclick=start;$('overlayClose').onclick=hideOverlay;$('undo').onclick=restoreState;$('hintBtn').onclick=hint;$('continueBtn').onclick=()=>{keepGoing=true;hideOverlay();statusEl.textContent='Okay, endless mode enabled.';};$('resetBest').onclick=()=>{best=0;localStorage.setItem('liquid2048Best','0');updateStats();};goalEl.onchange=()=>updateStats();$('sparkleToggle').onclick=()=>{sparkles=!sparkles;$('sparkleToggle').textContent='Sparkles: '+(sparkles?'On':'Off');};$('speed').onchange=e=>{const v=e.target.value;animMs=v==='fast'?120:v==='floaty'?260:180;};
-new ResizeObserver(()=>render(true)).observe(boardEl);
+$('newGame').onclick=start;$('overlayNew').onclick=start;$('overlayClose').onclick=hideOverlay;$('undo').onclick=restoreState;$('hintBtn').onclick=hint;$('continueBtn').onclick=()=>{keepGoing=true;hideOverlay();statusEl.textContent='Okay, endless mode enabled.';};$('resetBest').onclick=()=>{best=0;localStorage.setItem('liquid2048Best','0');updateStats();};goalEl.onchange=()=>updateStats();$('sparkleToggle').onclick=()=>{sparkles=!sparkles;$('sparkleToggle').textContent='Sparkles: '+(sparkles?'On':'Off');};$('speed').onchange=e=>{const v=e.target.value;animMs=v==='fast'?70:v==='floaty'?190:120;};
+new ResizeObserver(()=>{metrics=getMetrics();renderGrid();syncTiles(true);}).observe(boardEl);
 start();
 </script>
 </body>
