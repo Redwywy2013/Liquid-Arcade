@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Liquid Tetris</title>
+<style>
+*{box-sizing:border-box}
+:root{
+  --bg0:#140211;--bg1:#24051d;--bg2:#6d1b4f;
+  --panel:rgba(42,10,33,.78);--panel2:rgba(24,5,19,.46);
+  --border:rgba(244,114,182,.28);--border2:rgba(249,168,212,.16);
+  --text:#ffe4f2;--muted:#f9a8d4;
+  --pink:#f472b6;--hot:#ec4899;--purple:#d946ef;--rose:#fb7185;
+  --cyan:#67e8f9;--yellow:#facc15;--green:#4ade80;--red:#ef4444;
+}
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;background:radial-gradient(circle at 20% 20%,#ec4899,var(--bg1) 42%,var(--bg0));color:var(--text);overflow:hidden}
+#wrap{width:min(1200px,100vw);height:min(820px,100vh);padding:14px;display:grid;grid-template-columns:300px 1fr 230px;gap:18px}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:28px;backdrop-filter:blur(16px);box-shadow:0 24px 80px rgba(0,0,0,.46),0 0 60px rgba(244,114,182,.14)}
+#left,#right{padding:18px;overflow:auto;scrollbar-width:thin}#gamePanel{padding:18px;display:flex;align-items:center;justify-content:center;position:relative;min-width:0}
+h1{margin:0;font-size:46px;line-height:.9;letter-spacing:-.06em}.subtitle{margin-top:12px;color:var(--muted);font-size:13px;line-height:1.4}.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}.box{background:var(--panel2);border:1px solid var(--border2);border-radius:18px;padding:12px;margin-top:10px}.box span{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}.box b{display:block;font-size:27px;margin-top:5px}
+button,select{width:100%;padding:12px;margin-top:10px;border-radius:16px;border:1px solid rgba(244,114,182,.28);background:#1f1020;color:white;font-weight:900;cursor:pointer;transition:transform .16s ease,filter .16s ease,box-shadow .16s ease}button:hover{transform:translateY(-2px);filter:brightness(1.12);box-shadow:0 0 24px rgba(244,114,182,.14)}.primary{background:linear-gradient(135deg,#ec4899,#f472b6,#f9a8d4);border:0;color:#210416}.danger{background:linear-gradient(135deg,#ef4444,#fb7185);border:0}
+.tabs{display:flex;gap:0;margin:14px -10px 14px;padding:0 6px;overflow-x:auto}.tab-btn{position:relative;margin:0 -1px -1px 0;padding:9px 8px;font-size:11px;border-radius:12px 12px 0 0;border:1px solid rgba(244,114,182,.22);background:rgba(42,10,33,.55);color:var(--muted);box-shadow:none;min-width:70px}.tab-btn:hover{filter:none;background:rgba(91,22,67,.78);color:var(--text);transform:none}.tab-btn.active{z-index:2;background:rgba(42,10,33,.96);border-color:rgba(244,114,182,.38);color:white}.tab-panel{display:none}.tab-panel.active{display:block}.hint{color:var(--muted);font-size:13px;line-height:1.4;margin-top:12px}
+#boardWrap{position:relative;padding:16px;border-radius:32px;background:rgba(24,5,19,.55);border:1px solid rgba(249,168,212,.18);box-shadow:inset 0 0 60px rgba(244,114,182,.08),0 0 70px rgba(244,114,182,.16)}
+#board{display:grid;grid-template-columns:repeat(10,32px);grid-template-rows:repeat(20,32px);gap:4px}.cell{width:32px;height:32px;border-radius:10px;background:rgba(255,228,242,.045);border:1px solid rgba(249,168,212,.08);box-shadow:inset 0 0 14px rgba(255,255,255,.025);transition:background .08s ease,transform .08s ease,box-shadow .08s ease,opacity .08s ease}.cell.filled{background:linear-gradient(135deg,var(--c1),var(--c2));box-shadow:0 0 18px var(--glow),inset 0 0 15px rgba(255,255,255,.18);border-color:rgba(255,255,255,.18);animation:pop .12s ease}.cell.ghost{opacity:.32;background:rgba(249,168,212,.20);border-color:rgba(249,168,212,.25)}.cell.clear{animation:clearLine .38s ease both}
+@keyframes pop{from{transform:scale(.72)}to{transform:scale(1)}}@keyframes clearLine{0%{filter:brightness(1);transform:scale(1)}45%{filter:brightness(2.6);transform:scale(1.12)}100%{opacity:0;transform:scale(.3)}}
+.spark{position:absolute;width:6px;height:6px;border-radius:50%;background:#f9a8d4;pointer-events:none;box-shadow:0 0 12px #f472b6;transition:transform .45s ease,opacity .45s ease}.shake{animation:shake .18s ease}@keyframes shake{25%{transform:translateX(-4px)}50%{transform:translateX(4px)}75%{transform:translateX(-2px)}}
+.preview{display:grid;grid-template-columns:repeat(4,28px);grid-template-rows:repeat(4,28px);gap:5px;justify-content:center;margin-top:12px}.mini{width:28px;height:28px;border-radius:8px;background:rgba(255,228,242,.045);border:1px solid rgba(249,168,212,.08)}.mini.on{background:linear-gradient(135deg,#ec4899,#f9a8d4);box-shadow:0 0 14px rgba(244,114,182,.55)}
+.overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(20,2,17,.55);backdrop-filter:blur(7px);z-index:20;padding:16px}.overlay.show{display:flex}.overlay-card{width:min(420px,100%);padding:26px;text-align:center}.overlay-card h2{font-size:40px;margin:0 0 8px;letter-spacing:-.05em}.overlay-card p{color:var(--muted)}
+.mobile-controls{display:none;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}.mobile-controls button{margin:0;padding:12px}.wide{grid-column:span 3}
+@media(max-width:950px){body{overflow:auto;align-items:flex-start;padding:8px}#wrap{width:100%;height:auto;grid-template-columns:1fr;gap:8px}#gamePanel{order:1}#left{order:2}#right{order:3}.mobile-controls{display:grid}#board{grid-template-columns:repeat(10,28px);grid-template-rows:repeat(20,28px)}.cell{width:28px;height:28px;border-radius:8px}}
+@media(orientation:landscape) and (max-height:650px){body{overflow:hidden;padding:6px}#wrap{height:100vh;width:100vw;grid-template-columns:230px 1fr 190px;gap:8px;padding:6px}.panel{border-radius:18px}#left,#right,#gamePanel{padding:10px}h1{font-size:30px}.box{padding:8px;border-radius:12px}.box b{font-size:20px}button,select{padding:8px;font-size:12px;border-radius:12px}.hint,.subtitle{font-size:11px;line-height:1.25}#board{grid-template-columns:repeat(10,24px);grid-template-rows:repeat(20,24px);gap:3px}.cell{width:24px;height:24px;border-radius:7px}.preview{grid-template-columns:repeat(4,22px);grid-template-rows:repeat(4,22px)}.mini{width:22px;height:22px}}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <aside id="left" class="panel">
+    <h1>Liquid<br>Tetris</h1>
+    <div class="subtitle">Pink-glass Tetris with smooth drops, ghost piece, hold, particles, and line-clear pop.</div>
+    <div class="stats">
+      <div class="box"><span>Score</span><b id="score">0</b></div>
+      <div class="box"><span>Best</span><b id="best">0</b></div>
+      <div class="box"><span>Level</span><b id="level">1</b></div>
+      <div class="box"><span>Lines</span><b id="lines">0</b></div>
+    </div>
+    <button id="newGame" class="primary">New Game</button>
+    <button id="pauseBtn">Pause</button>
+    <button id="resetBest" class="danger">Reset Best</button>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="settings">Settings</button>
+      <button class="tab-btn" data-tab="controls">Controls</button>
+    </div>
+    <section class="tab-panel active" id="tab-settings">
+      <div class="box"><span>Start Level</span><select id="startLevel"><option>1</option><option>3</option><option>5</option><option>8</option><option>10</option></select></div>
+      <div class="box"><span>Ghost Piece</span><select id="ghostSetting"><option value="on" selected>On</option><option value="off">Off</option></select></div>
+      <div class="box"><span>Particle Burst</span><select id="particleSetting"><option value="on" selected>On</option><option value="off">Off</option></select></div>
+    </section>
+    <section class="tab-panel" id="tab-controls">
+      <div class="hint">Move: ← → or A/D<br>Soft drop: ↓ or S<br>Rotate: ↑, W, or X<br>Rotate back: Z<br>Hard drop: Space<br>Hold: C or Shift<br>Pause: P</div>
+    </section>
+  </aside>
+
+  <main id="gamePanel" class="panel">
+    <div id="boardWrap"><div id="board"></div></div>
+  </main>
+
+  <aside id="right" class="panel">
+    <div class="box"><span>Next</span><div id="next" class="preview"></div></div>
+    <div class="box"><span>Hold</span><div id="hold" class="preview"></div></div>
+    <div class="box"><span>Status</span><b id="status">Ready</b></div>
+    <div class="mobile-controls">
+      <button data-act="left">←</button><button data-act="rotate">↻</button><button data-act="right">→</button>
+      <button data-act="hold">Hold</button><button data-act="down">↓</button><button data-act="drop">Drop</button>
+      <button class="wide" data-act="pause">Pause</button>
+    </div>
+  </aside>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="overlay-card panel">
+    <h2 id="overlayTitle">Game Over</h2>
+    <p id="overlayText">The stack reached the top.</p>
+    <button id="overlayNew" class="primary">New Game</button>
+    <button id="overlayClose">Close</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const W=10,H=20;
+const boardEl=$('board'),scoreEl=$('score'),bestEl=$('best'),levelEl=$('level'),linesEl=$('lines'),statusEl=$('status'),nextEl=$('next'),holdEl=$('hold'),overlay=$('overlay');
+const shapes={
+ I:[[1,1,1,1]], O:[[1,1],[1,1]], T:[[0,1,0],[1,1,1]], S:[[0,1,1],[1,1,0]], Z:[[1,1,0],[0,1,1]], J:[[1,0,0],[1,1,1]], L:[[0,0,1],[1,1,1]]
+};
+const colors={I:['#67e8f9','#06b6d4','rgba(103,232,249,.55)'],O:['#facc15','#f59e0b','rgba(250,204,21,.55)'],T:['#d946ef','#a855f7','rgba(217,70,239,.55)'],S:['#4ade80','#22c55e','rgba(74,222,128,.55)'],Z:['#fb7185','#ef4444','rgba(251,113,133,.55)'],J:['#60a5fa','#2563eb','rgba(96,165,250,.55)'],L:['#f472b6','#ec4899','rgba(244,114,182,.55)']};
+let grid,piece,next,hold=null,canHold=true,score=0,lines=0,level=1,best=Number(localStorage.getItem('liquidTetrisBest')||0),running=false,paused=false,last=0,dropCounter=0,gameOver=false;
+function empty(){return Array.from({length:H},()=>Array(W).fill(null));}
+function randType(){return Object.keys(shapes)[Math.floor(Math.random()*7)];}
+function cloneShape(s){return s.map(r=>[...r]);}
+function newPiece(type=randType()){const shape=cloneShape(shapes[type]);return {type,shape,x:Math.floor((W-shape[0].length)/2),y:0};}
+function start(){grid=empty();score=0;lines=0;level=Number($('startLevel').value)||1;hold=null;canHold=true;next=newPiece();piece=newPiece();spawn();running=true;paused=false;gameOver=false;dropCounter=0;last=performance.now();hideOverlay();update();draw();requestAnimationFrame(loop);statusEl.textContent='Playing';}
+function spawn(){piece=next||newPiece();piece.x=Math.floor((W-piece.shape[0].length)/2);piece.y=0;next=newPiece();canHold=true;if(collide(piece)){gameOver=true;running=false;showOverlay();statusEl.textContent='Game Over';}drawPreview(nextEl,next);drawPreview(holdEl,hold);}
+function collide(p,ox=0,oy=0,shape=p.shape){for(let y=0;y<shape.length;y++)for(let x=0;x<shape[y].length;x++)if(shape[y][x]){const nx=p.x+x+ox,ny=p.y+y+oy;if(nx<0||nx>=W||ny>=H)return true;if(ny>=0&&grid[ny][nx])return true;}return false;}
+function merge(){for(let y=0;y<piece.shape.length;y++)for(let x=0;x<piece.shape[y].length;x++)if(piece.shape[y][x]){const gy=piece.y+y,gx=piece.x+x;if(gy>=0)grid[gy][gx]=piece.type;}clearLines();spawn();}
+function clearLines(){let cleared=[];for(let y=H-1;y>=0;y--)if(grid[y].every(Boolean)){cleared.push(y);grid.splice(y,1);grid.unshift(Array(W).fill(null));y++;}if(cleared.length){const pts=[0,100,300,500,800][cleared.length]*level;score+=pts;lines+=cleared.length;level=Math.max(level,Math.floor(lines/10)+Number($('startLevel').value));flashRows(cleared);if($('particleSetting').value==='on')particles(cleared);statusEl.textContent=cleared.length===4?'TETRIS! +'+pts:'Clear x'+cleared.length+' +'+pts;update();}}
+function rotateShape(shape,dir=1){const h=shape.length,w=shape[0].length,out=Array.from({length:w},()=>Array(h).fill(0));for(let y=0;y<h;y++)for(let x=0;x<w;x++)out[dir>0?x:w-1-x][dir>0?h-1-y:y]=shape[y][x];return out;}
+function rotate(dir=1){const ns=rotateShape(piece.shape,dir);for(const kick of [0,-1,1,-2,2]){if(!collide(piece,kick,0,ns)){piece.x+=kick;piece.shape=ns;draw();return;}}shake();}
+function move(dx){if(!collide(piece,dx,0)){piece.x+=dx;draw();}else shake();}
+function softDrop(){if(!collide(piece,0,1)){piece.y++;score++;update();draw();}else merge();}
+function hardDrop(){let d=0;while(!collide(piece,0,1)){piece.y++;d++;}score+=d*2;update();merge();draw();}
+function holdPiece(){if(!canHold)return;if(!hold){hold={type:piece.type,shape:cloneShape(shapes[piece.type])};piece=next;next=newPiece();}else{const t=hold.type;hold={type:piece.type,shape:cloneShape(shapes[piece.type])};piece=newPiece(t);}piece.x=Math.floor((W-piece.shape[0].length)/2);piece.y=0;canHold=false;drawPreview(holdEl,hold);drawPreview(nextEl,next);draw();}
+function ghostY(){const g={...piece,shape:piece.shape.map(r=>[...r])};while(!collide(g,0,1))g.y++;return g.y;}
+function draw(){boardEl.innerHTML='';const display=grid.map(r=>[...r]);if($('ghostSetting').value==='on'&&piece&&!gameOver){const gy=ghostY();paint(display,{...piece,y:gy},'ghost');}if(piece&&!gameOver)paint(display,piece,'filled');for(let y=0;y<H;y++)for(let x=0;x<W;x++){const c=document.createElement('div');c.className='cell';const v=display[y][x];if(v){if(v==='ghost'){c.classList.add('ghost')}else{c.classList.add('filled');const col=colors[v];c.style.setProperty('--c1',col[0]);c.style.setProperty('--c2',col[1]);c.style.setProperty('--glow',col[2]);}}boardEl.appendChild(c);}}
+function paint(target,p,mode){for(let y=0;y<p.shape.length;y++)for(let x=0;x<p.shape[y].length;x++)if(p.shape[y][x]){const yy=p.y+y,xx=p.x+x;if(yy>=0&&yy<H&&xx>=0&&xx<W)target[yy][xx]=mode==='ghost'?'ghost':p.type;}}
+function drawPreview(el,p){el.innerHTML='';for(let i=0;i<16;i++){const d=document.createElement('div');d.className='mini';el.appendChild(d);}if(!p)return;const cells=[...el.children],s=p.shape,offX=Math.floor((4-s[0].length)/2),offY=Math.floor((4-s.length)/2);for(let y=0;y<s.length;y++)for(let x=0;x<s[y].length;x++)if(s[y][x])cells[(y+offY)*4+x+offX].classList.add('on');}
+function update(){best=Math.max(best,score);localStorage.setItem('liquidTetrisBest',best);scoreEl.textContent=score;bestEl.textContent=best;levelEl.textContent=level;linesEl.textContent=lines;}
+function speed(){return Math.max(80,760-(level-1)*55);}
+function loop(t){if(!running)return;const dt=t-last;last=t;if(!paused){dropCounter+=dt;if(dropCounter>speed()){softDrop();dropCounter=0;}}requestAnimationFrame(loop);}
+function showOverlay(){overlay.classList.add('show');$('overlayTitle').textContent='Game Over';$('overlayText').textContent='Final score: '+score;}
+function hideOverlay(){overlay.classList.remove('show');}
+function togglePause(){if(!running)return;paused=!paused;statusEl.textContent=paused?'Paused':'Playing';$('pauseBtn').textContent=paused?'Resume':'Pause';}
+function flashRows(rows){setTimeout(()=>{for(const y of rows){for(let x=0;x<W;x++){const i=y*W+x;boardEl.children[i]?.classList.add('clear');}}},20);}
+function particles(rows){const rect=boardEl.getBoundingClientRect();for(const y of rows){for(let i=0;i<18;i++){const s=document.createElement('div');s.className='spark';s.style.left=rect.left+Math.random()*rect.width+'px';s.style.top=rect.top+(y+.5)*(rect.height/H)+'px';document.body.appendChild(s);const a=Math.random()*Math.PI*2,d=40+Math.random()*80;requestAnimationFrame(()=>{s.style.transform=`translate(${Math.cos(a)*d}px,${Math.sin(a)*d}px) scale(.2)`;s.style.opacity='0';});setTimeout(()=>s.remove(),520);}}}
+function shake(){document.getElementById('boardWrap').classList.remove('shake');void document.getElementById('boardWrap').offsetWidth;document.getElementById('boardWrap').classList.add('shake');}
+document.addEventListener('keydown',e=>{if(gameOver)return;const k=e.code;if(k==='ArrowLeft'||k==='KeyA'){e.preventDefault();move(-1)}if(k==='ArrowRight'||k==='KeyD'){e.preventDefault();move(1)}if(k==='ArrowDown'||k==='KeyS'){e.preventDefault();softDrop()}if(k==='ArrowUp'||k==='KeyW'||k==='KeyX'){e.preventDefault();rotate(1)}if(k==='KeyZ'){e.preventDefault();rotate(-1)}if(k==='Space'){e.preventDefault();hardDrop()}if(k==='KeyC'||k==='ShiftLeft'||k==='ShiftRight'){e.preventDefault();holdPiece()}if(k==='KeyP'){e.preventDefault();togglePause()}});
+for(const btn of document.querySelectorAll('.tab-btn'))btn.onclick=()=>{document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));btn.classList.add('active');document.getElementById('tab-'+btn.dataset.tab).classList.add('active')};
+document.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>{const a=b.dataset.act;if(a==='left')move(-1);if(a==='right')move(1);if(a==='rotate')rotate(1);if(a==='down')softDrop();if(a==='drop')hardDrop();if(a==='hold')holdPiece();if(a==='pause')togglePause();});
+$('newGame').onclick=start;$('overlayNew').onclick=start;$('overlayClose').onclick=hideOverlay;$('pauseBtn').onclick=togglePause;$('resetBest').onclick=()=>{best=0;localStorage.setItem('liquidTetrisBest','0');update();};$('ghostSetting').onchange=draw;
+start();
+</script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Liquid Tetris</title>
+<style>
+*{box-sizing:border-box}
+:root{
+  --bg0:#140211;--bg1:#24051d;--bg2:#6d1b4f;
+  --panel:rgba(42,10,33,.78);--panel2:rgba(24,5,19,.46);
+  --border:rgba(244,114,182,.28);--border2:rgba(249,168,212,.16);
+  --text:#ffe4f2;--muted:#f9a8d4;
+  --pink:#f472b6;--hot:#ec4899;--purple:#d946ef;--rose:#fb7185;
+  --cyan:#67e8f9;--yellow:#facc15;--green:#4ade80;--red:#ef4444;
+}
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;background:radial-gradient(circle at 20% 20%,#ec4899,var(--bg1) 42%,var(--bg0));color:var(--text);overflow:hidden}
+#wrap{width:min(1200px,100vw);height:min(820px,100vh);padding:14px;display:grid;grid-template-columns:300px 1fr 230px;gap:18px}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:28px;backdrop-filter:blur(16px);box-shadow:0 24px 80px rgba(0,0,0,.46),0 0 60px rgba(244,114,182,.14)}
+#left,#right{padding:18px;overflow:auto;scrollbar-width:thin}#gamePanel{padding:18px;display:flex;align-items:center;justify-content:center;position:relative;min-width:0}
+h1{margin:0;font-size:46px;line-height:.9;letter-spacing:-.06em}.subtitle{margin-top:12px;color:var(--muted);font-size:13px;line-height:1.4}.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}.box{background:var(--panel2);border:1px solid var(--border2);border-radius:18px;padding:12px;margin-top:10px}.box span{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}.box b{display:block;font-size:27px;margin-top:5px}
+button,select{width:100%;padding:12px;margin-top:10px;border-radius:16px;border:1px solid rgba(244,114,182,.28);background:#1f1020;color:white;font-weight:900;cursor:pointer;transition:transform .16s ease,filter .16s ease,box-shadow .16s ease}button:hover{transform:translateY(-2px);filter:brightness(1.12);box-shadow:0 0 24px rgba(244,114,182,.14)}.primary{background:linear-gradient(135deg,#ec4899,#f472b6,#f9a8d4);border:0;color:#210416}.danger{background:linear-gradient(135deg,#ef4444,#fb7185);border:0}
+.tabs{display:flex;gap:0;margin:14px -10px 14px;padding:0 6px;overflow-x:auto}.tab-btn{position:relative;margin:0 -1px -1px 0;padding:9px 8px;font-size:11px;border-radius:12px 12px 0 0;border:1px solid rgba(244,114,182,.22);background:rgba(42,10,33,.55);color:var(--muted);box-shadow:none;min-width:70px}.tab-btn:hover{filter:none;background:rgba(91,22,67,.78);color:var(--text);transform:none}.tab-btn.active{z-index:2;background:rgba(42,10,33,.96);border-color:rgba(244,114,182,.38);color:white}.tab-panel{display:none}.tab-panel.active{display:block}.hint{color:var(--muted);font-size:13px;line-height:1.4;margin-top:12px}
+#boardWrap{position:relative;padding:16px;border-radius:32px;background:rgba(24,5,19,.55);border:1px solid rgba(249,168,212,.18);box-shadow:inset 0 0 60px rgba(244,114,182,.08),0 0 70px rgba(244,114,182,.16)}
+#board{display:grid;grid-template-columns:repeat(10,32px);grid-template-rows:repeat(20,32px);gap:4px}.cell{width:32px;height:32px;border-radius:10px;background:rgba(255,228,242,.045);border:1px solid rgba(249,168,212,.08);box-shadow:inset 0 0 14px rgba(255,255,255,.025);transition:background .08s ease,transform .08s ease,box-shadow .08s ease,opacity .08s ease}.cell.filled{background:linear-gradient(135deg,var(--c1),var(--c2));box-shadow:0 0 18px var(--glow),inset 0 0 15px rgba(255,255,255,.18);border-color:rgba(255,255,255,.18);animation:pop .12s ease}.cell.ghost{opacity:.32;background:rgba(249,168,212,.20);border-color:rgba(249,168,212,.25)}.cell.clear{animation:clearLine .38s ease both}
+@keyframes pop{from{transform:scale(.72)}to{transform:scale(1)}}@keyframes clearLine{0%{filter:brightness(1);transform:scale(1)}45%{filter:brightness(2.6);transform:scale(1.12)}100%{opacity:0;transform:scale(.3)}}
+.spark{position:absolute;width:6px;height:6px;border-radius:50%;background:#f9a8d4;pointer-events:none;box-shadow:0 0 12px #f472b6;transition:transform .45s ease,opacity .45s ease}.shake{animation:shake .18s ease}@keyframes shake{25%{transform:translateX(-4px)}50%{transform:translateX(4px)}75%{transform:translateX(-2px)}}
+.preview{display:grid;grid-template-columns:repeat(4,28px);grid-template-rows:repeat(4,28px);gap:5px;justify-content:center;margin-top:12px}.mini{width:28px;height:28px;border-radius:8px;background:rgba(255,228,242,.045);border:1px solid rgba(249,168,212,.08)}.mini.on{background:linear-gradient(135deg,#ec4899,#f9a8d4);box-shadow:0 0 14px rgba(244,114,182,.55)}
+.overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(20,2,17,.55);backdrop-filter:blur(7px);z-index:20;padding:16px}.overlay.show{display:flex}.overlay-card{width:min(420px,100%);padding:26px;text-align:center}.overlay-card h2{font-size:40px;margin:0 0 8px;letter-spacing:-.05em}.overlay-card p{color:var(--muted)}
+.mobile-controls{display:none;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}.mobile-controls button{margin:0;padding:12px}.wide{grid-column:span 3}
+@media(max-width:950px){body{overflow:auto;align-items:flex-start;padding:8px}#wrap{width:100%;height:auto;grid-template-columns:1fr;gap:8px}#gamePanel{order:1}#left{order:2}#right{order:3}.mobile-controls{display:grid}#board{grid-template-columns:repeat(10,28px);grid-template-rows:repeat(20,28px)}.cell{width:28px;height:28px;border-radius:8px}}
+@media(orientation:landscape) and (max-height:650px){body{overflow:hidden;padding:6px}#wrap{height:100vh;width:100vw;grid-template-columns:230px 1fr 190px;gap:8px;padding:6px}.panel{border-radius:18px}#left,#right,#gamePanel{padding:10px}h1{font-size:30px}.box{padding:8px;border-radius:12px}.box b{font-size:20px}button,select{padding:8px;font-size:12px;border-radius:12px}.hint,.subtitle{font-size:11px;line-height:1.25}#board{grid-template-columns:repeat(10,24px);grid-template-rows:repeat(20,24px);gap:3px}.cell{width:24px;height:24px;border-radius:7px}.preview{grid-template-columns:repeat(4,22px);grid-template-rows:repeat(4,22px)}.mini{width:22px;height:22px}}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <aside id="left" class="panel">
+    <h1>Liquid<br>Tetris</h1>
+    <div class="subtitle">Pink-glass Tetris with smooth drops, ghost piece, hold, particles, and line-clear pop.</div>
+    <div class="stats">
+      <div class="box"><span>Score</span><b id="score">0</b></div>
+      <div class="box"><span>Best</span><b id="best">0</b></div>
+      <div class="box"><span>Level</span><b id="level">1</b></div>
+      <div class="box"><span>Lines</span><b id="lines">0</b></div>
+    </div>
+    <button id="newGame" class="primary">New Game</button>
+    <button id="pauseBtn">Pause</button>
+    <button id="resetBest" class="danger">Reset Best</button>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="settings">Settings</button>
+      <button class="tab-btn" data-tab="controls">Controls</button>
+    </div>
+    <section class="tab-panel active" id="tab-settings">
+      <div class="box"><span>Start Level</span><select id="startLevel"><option>1</option><option>3</option><option>5</option><option>8</option><option>10</option></select></div>
+      <div class="box"><span>Ghost Piece</span><select id="ghostSetting"><option value="on" selected>On</option><option value="off">Off</option></select></div>
+      <div class="box"><span>Particle Burst</span><select id="particleSetting"><option value="on" selected>On</option><option value="off">Off</option></select></div>
+    </section>
+    <section class="tab-panel" id="tab-controls">
+      <div class="hint">Move: ← → or A/D<br>Soft drop: ↓ or S<br>Rotate: ↑, W, or X<br>Rotate back: Z<br>Hard drop: Space<br>Hold: C or Shift<br>Pause: P</div>
+    </section>
+  </aside>
+
+  <main id="gamePanel" class="panel">
+    <div id="boardWrap"><div id="board"></div></div>
+  </main>
+
+  <aside id="right" class="panel">
+    <div class="box"><span>Next</span><div id="next" class="preview"></div></div>
+    <div class="box"><span>Hold</span><div id="hold" class="preview"></div></div>
+    <div class="box"><span>Status</span><b id="status">Ready</b></div>
+    <div class="mobile-controls">
+      <button data-act="left">←</button><button data-act="rotate">↻</button><button data-act="right">→</button>
+      <button data-act="hold">Hold</button><button data-act="down">↓</button><button data-act="drop">Drop</button>
+      <button class="wide" data-act="pause">Pause</button>
+    </div>
+  </aside>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="overlay-card panel">
+    <h2 id="overlayTitle">Game Over</h2>
+    <p id="overlayText">The stack reached the top.</p>
+    <button id="overlayNew" class="primary">New Game</button>
+    <button id="overlayClose">Close</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const W=10,H=20;
+const boardEl=$('board'),scoreEl=$('score'),bestEl=$('best'),levelEl=$('level'),linesEl=$('lines'),statusEl=$('status'),nextEl=$('next'),holdEl=$('hold'),overlay=$('overlay');
+const shapes={
+ I:[[1,1,1,1]], O:[[1,1],[1,1]], T:[[0,1,0],[1,1,1]], S:[[0,1,1],[1,1,0]], Z:[[1,1,0],[0,1,1]], J:[[1,0,0],[1,1,1]], L:[[0,0,1],[1,1,1]]
+};
+const colors={I:['#67e8f9','#06b6d4','rgba(103,232,249,.55)'],O:['#facc15','#f59e0b','rgba(250,204,21,.55)'],T:['#d946ef','#a855f7','rgba(217,70,239,.55)'],S:['#4ade80','#22c55e','rgba(74,222,128,.55)'],Z:['#fb7185','#ef4444','rgba(251,113,133,.55)'],J:['#60a5fa','#2563eb','rgba(96,165,250,.55)'],L:['#f472b6','#ec4899','rgba(244,114,182,.55)']};
+let grid,piece,next,hold=null,canHold=true,score=0,lines=0,level=1,best=Number(localStorage.getItem('liquidTetrisBest')||0),running=false,paused=false,last=0,dropCounter=0,gameOver=false;
+function empty(){return Array.from({length:H},()=>Array(W).fill(null));}
+function randType(){return Object.keys(shapes)[Math.floor(Math.random()*7)];}
+function cloneShape(s){return s.map(r=>[...r]);}
+function newPiece(type=randType()){const shape=cloneShape(shapes[type]);return {type,shape,x:Math.floor((W-shape[0].length)/2),y:0};}
+function start(){grid=empty();score=0;lines=0;level=Number($('startLevel').value)||1;hold=null;canHold=true;next=newPiece();piece=newPiece();spawn();running=true;paused=false;gameOver=false;dropCounter=0;last=performance.now();hideOverlay();update();draw();requestAnimationFrame(loop);statusEl.textContent='Playing';}
+function spawn(){piece=next||newPiece();piece.x=Math.floor((W-piece.shape[0].length)/2);piece.y=0;next=newPiece();canHold=true;if(collide(piece)){gameOver=true;running=false;showOverlay();statusEl.textContent='Game Over';}drawPreview(nextEl,next);drawPreview(holdEl,hold);}
+function collide(p,ox=0,oy=0,shape=p.shape){for(let y=0;y<shape.length;y++)for(let x=0;x<shape[y].length;x++)if(shape[y][x]){const nx=p.x+x+ox,ny=p.y+y+oy;if(nx<0||nx>=W||ny>=H)return true;if(ny>=0&&grid[ny][nx])return true;}return false;}
+function merge(){for(let y=0;y<piece.shape.length;y++)for(let x=0;x<piece.shape[y].length;x++)if(piece.shape[y][x]){const gy=piece.y+y,gx=piece.x+x;if(gy>=0)grid[gy][gx]=piece.type;}clearLines();spawn();}
+function clearLines(){let cleared=[];for(let y=H-1;y>=0;y--)if(grid[y].every(Boolean)){cleared.push(y);grid.splice(y,1);grid.unshift(Array(W).fill(null));y++;}if(cleared.length){const pts=[0,100,300,500,800][cleared.length]*level;score+=pts;lines+=cleared.length;level=Math.max(level,Math.floor(lines/10)+Number($('startLevel').value));flashRows(cleared);if($('particleSetting').value==='on')particles(cleared);statusEl.textContent=cleared.length===4?'TETRIS! +'+pts:'Clear x'+cleared.length+' +'+pts;update();}}
+function rotateShape(shape,dir=1){const h=shape.length,w=shape[0].length,out=Array.from({length:w},()=>Array(h).fill(0));for(let y=0;y<h;y++)for(let x=0;x<w;x++)out[dir>0?x:w-1-x][dir>0?h-1-y:y]=shape[y][x];return out;}
+function rotate(dir=1){const ns=rotateShape(piece.shape,dir);for(const kick of [0,-1,1,-2,2]){if(!collide(piece,kick,0,ns)){piece.x+=kick;piece.shape=ns;draw();return;}}shake();}
+function move(dx){if(!collide(piece,dx,0)){piece.x+=dx;draw();}else shake();}
+function softDrop(){if(!collide(piece,0,1)){piece.y++;score++;update();draw();}else merge();}
+function hardDrop(){let d=0;while(!collide(piece,0,1)){piece.y++;d++;}score+=d*2;update();merge();draw();}
+function holdPiece(){if(!canHold)return;if(!hold){hold={type:piece.type,shape:cloneShape(shapes[piece.type])};piece=next;next=newPiece();}else{const t=hold.type;hold={type:piece.type,shape:cloneShape(shapes[piece.type])};piece=newPiece(t);}piece.x=Math.floor((W-piece.shape[0].length)/2);piece.y=0;canHold=false;drawPreview(holdEl,hold);drawPreview(nextEl,next);draw();}
+function ghostY(){const g={...piece,shape:piece.shape.map(r=>[...r])};while(!collide(g,0,1))g.y++;return g.y;}
+function draw(){boardEl.innerHTML='';const display=grid.map(r=>[...r]);if($('ghostSetting').value==='on'&&piece&&!gameOver){const gy=ghostY();paint(display,{...piece,y:gy},'ghost');}if(piece&&!gameOver)paint(display,piece,'filled');for(let y=0;y<H;y++)for(let x=0;x<W;x++){const c=document.createElement('div');c.className='cell';const v=display[y][x];if(v){if(v==='ghost'){c.classList.add('ghost')}else{c.classList.add('filled');const col=colors[v];c.style.setProperty('--c1',col[0]);c.style.setProperty('--c2',col[1]);c.style.setProperty('--glow',col[2]);}}boardEl.appendChild(c);}}
+function paint(target,p,mode){for(let y=0;y<p.shape.length;y++)for(let x=0;x<p.shape[y].length;x++)if(p.shape[y][x]){const yy=p.y+y,xx=p.x+x;if(yy>=0&&yy<H&&xx>=0&&xx<W)target[yy][xx]=mode==='ghost'?'ghost':p.type;}}
+function drawPreview(el,p){el.innerHTML='';for(let i=0;i<16;i++){const d=document.createElement('div');d.className='mini';el.appendChild(d);}if(!p)return;const cells=[...el.children],s=p.shape,offX=Math.floor((4-s[0].length)/2),offY=Math.floor((4-s.length)/2);for(let y=0;y<s.length;y++)for(let x=0;x<s[y].length;x++)if(s[y][x])cells[(y+offY)*4+x+offX].classList.add('on');}
+function update(){best=Math.max(best,score);localStorage.setItem('liquidTetrisBest',best);scoreEl.textContent=score;bestEl.textContent=best;levelEl.textContent=level;linesEl.textContent=lines;}
+function speed(){return Math.max(80,760-(level-1)*55);}
+function loop(t){if(!running)return;const dt=t-last;last=t;if(!paused){dropCounter+=dt;if(dropCounter>speed()){softDrop();dropCounter=0;}}requestAnimationFrame(loop);}
+function showOverlay(){overlay.classList.add('show');$('overlayTitle').textContent='Game Over';$('overlayText').textContent='Final score: '+score;}
+function hideOverlay(){overlay.classList.remove('show');}
+function togglePause(){if(!running)return;paused=!paused;statusEl.textContent=paused?'Paused':'Playing';$('pauseBtn').textContent=paused?'Resume':'Pause';}
+function flashRows(rows){setTimeout(()=>{for(const y of rows){for(let x=0;x<W;x++){const i=y*W+x;boardEl.children[i]?.classList.add('clear');}}},20);}
+function particles(rows){const rect=boardEl.getBoundingClientRect();for(const y of rows){for(let i=0;i<18;i++){const s=document.createElement('div');s.className='spark';s.style.left=rect.left+Math.random()*rect.width+'px';s.style.top=rect.top+(y+.5)*(rect.height/H)+'px';document.body.appendChild(s);const a=Math.random()*Math.PI*2,d=40+Math.random()*80;requestAnimationFrame(()=>{s.style.transform=`translate(${Math.cos(a)*d}px,${Math.sin(a)*d}px) scale(.2)`;s.style.opacity='0';});setTimeout(()=>s.remove(),520);}}}
+function shake(){document.getElementById('boardWrap').classList.remove('shake');void document.getElementById('boardWrap').offsetWidth;document.getElementById('boardWrap').classList.add('shake');}
+document.addEventListener('keydown',e=>{if(gameOver)return;const k=e.code;if(k==='ArrowLeft'||k==='KeyA'){e.preventDefault();move(-1)}if(k==='ArrowRight'||k==='KeyD'){e.preventDefault();move(1)}if(k==='ArrowDown'||k==='KeyS'){e.preventDefault();softDrop()}if(k==='ArrowUp'||k==='KeyW'||k==='KeyX'){e.preventDefault();rotate(1)}if(k==='KeyZ'){e.preventDefault();rotate(-1)}if(k==='Space'){e.preventDefault();hardDrop()}if(k==='KeyC'||k==='ShiftLeft'||k==='ShiftRight'){e.preventDefault();holdPiece()}if(k==='KeyP'){e.preventDefault();togglePause()}});
+for(const btn of document.querySelectorAll('.tab-btn'))btn.onclick=()=>{document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));btn.classList.add('active');document.getElementById('tab-'+btn.dataset.tab).classList.add('active')};
+document.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>{const a=b.dataset.act;if(a==='left')move(-1);if(a==='right')move(1);if(a==='rotate')rotate(1);if(a==='down')softDrop();if(a==='drop')hardDrop();if(a==='hold')holdPiece();if(a==='pause')togglePause();});
+$('newGame').onclick=start;$('overlayNew').onclick=start;$('overlayClose').onclick=hideOverlay;$('pauseBtn').onclick=togglePause;$('resetBest').onclick=()=>{best=0;localStorage.setItem('liquidTetrisBest','0');update();};$('ghostSetting').onchange=draw;
+start();
+</script>
+</body>
+</html>

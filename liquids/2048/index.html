@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Liquid 2048</title>
+<style>
+*{box-sizing:border-box}
+:root{
+  --bg0:#100801;
+  --bg1:#241304;
+  --bg2:#66420b;
+  --panel:rgba(30,22,8,.78);
+  --panel2:rgba(18,11,2,.48);
+  --border:rgba(250,204,21,.28);
+  --border2:rgba(253,224,71,.18);
+  --text:#fff7d6;
+  --muted:#d6bd6a;
+  --gold:#facc15;
+  --gold2:#fde047;
+  --amber:#f59e0b;
+  --orange:#f97316;
+  --red:#ef4444;
+}
+body{
+  margin:0;
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:radial-gradient(circle at 18% 18%,#7c520d,var(--bg1) 44%,var(--bg0));
+  color:var(--text);
+  font-family:system-ui,sans-serif;
+  overflow:hidden;
+}
+#wrap{
+  width:min(980px,100vw);
+  height:min(760px,100vh);
+  padding:12px;
+  display:grid;
+  grid-template-columns:280px 1fr;
+  gap:22px;
+}
+#ui,#gamePanel,.overlay-card{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:28px;
+  box-shadow:0 24px 80px rgba(0,0,0,.48),0 0 60px rgba(250,204,21,.08);
+  backdrop-filter:blur(14px);
+}
+#ui{padding:18px;overflow:auto;scrollbar-width:thin}
+h1{margin:0 0 14px;font-size:44px;line-height:.95;letter-spacing:-.06em}
+.subtitle{color:var(--muted);font-size:13px;line-height:1.4;margin-bottom:14px}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+.box{background:var(--panel2);border:1px solid var(--border2);border-radius:18px;padding:12px}
+.box span{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em}
+.box b{display:block;font-size:28px;margin-top:3px}
+button,select{
+  width:100%;margin-top:8px;padding:12px;border-radius:16px;
+  border:1px solid rgba(253,224,71,.24);background:#1f1608;color:white;
+  font-weight:900;cursor:pointer;transition:transform .16s ease,filter .16s ease,box-shadow .16s ease;
+}
+button:hover{transform:translateY(-2px);filter:brightness(1.1);box-shadow:0 0 24px rgba(250,204,21,.15)}
+.primary{border:0;background:linear-gradient(135deg,#f59e0b,#facc15,#fef08a);color:#1c1203}
+.danger{border:0;background:linear-gradient(135deg,#ef4444,#f97316)}
+.tabs{display:flex;gap:0;margin:14px -10px 14px;padding:0 6px;overflow-x:auto}
+.tab-btn{position:relative;margin:0 -1px -1px 0;padding:9px 8px;font-size:11px;border-radius:12px 12px 0 0;border:1px solid rgba(253,224,71,.22);background:rgba(30,22,8,.55);color:var(--muted);box-shadow:none;min-width:72px}
+.tab-btn:hover{filter:none;background:rgba(69,46,10,.72);color:var(--text)}
+.tab-btn.active{z-index:2;background:rgba(30,22,8,.96);color:#fff7d6;border-color:rgba(253,224,71,.36)}
+.tab-panel{display:none}.tab-panel.active{display:block}
+.hint{color:var(--muted);font-size:13px;line-height:1.4;margin-top:12px}.hint strong{color:#fff7d6}
+#gamePanel{padding:18px;display:grid;grid-template-rows:auto 1fr auto;gap:16px;min-width:0}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.titleblock h2{margin:0;font-size:30px;letter-spacing:-.05em}.titleblock p{margin:5px 0 0;color:var(--muted);font-size:13px}
+.mode-row{display:flex;gap:8px}.mode-row button{width:auto;min-width:96px;margin:0}
+.board-shell{display:flex;align-items:center;justify-content:center;min-height:0}
+#board{
+  --gap:12px;
+  --size:min(560px,calc(100vh - 230px),calc(100vw - 360px));
+  position:relative;width:var(--size);height:var(--size);padding:var(--gap);
+  border-radius:30px;background:rgba(18,11,2,.58);border:1px solid rgba(253,224,71,.22);
+  box-shadow:inset 0 0 64px rgba(250,204,21,.08),0 0 70px rgba(250,204,21,.12);
+  touch-action:none;overflow:hidden;
+}
+.grid{position:absolute;inset:var(--gap);display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,1fr);gap:var(--gap)}
+.cell{border-radius:22px;background:rgba(255,247,214,.07);border:1px solid rgba(253,224,71,.10);box-shadow:inset 0 0 24px rgba(0,0,0,.14)}
+.tile-layer{position:absolute;inset:var(--gap);pointer-events:none}
+.tile{
+  position:absolute;display:flex;align-items:center;justify-content:center;border-radius:22px;
+  font-weight:1000;letter-spacing:-.05em;color:#1b1305;text-shadow:0 1px 0 rgba(255,255,255,.2);
+  box-shadow:0 12px 30px rgba(0,0,0,.28),inset 0 0 22px rgba(255,255,255,.16);
+  transition:transform .18s cubic-bezier(.2,.9,.2,1),opacity .18s ease,filter .18s ease;
+  will-change:transform;
+}
+.tile.spawn{animation:spawn .22s cubic-bezier(.2,1.5,.2,1) both}
+.tile.merge{animation:merge .24s cubic-bezier(.2,1.6,.2,1) both;z-index:5}
+.tile.super{animation:merge .24s cubic-bezier(.2,1.6,.2,1) both,glow .9s ease both}
+@keyframes spawn{0%{transform:translate(var(--x),var(--y)) scale(.2);opacity:0;filter:brightness(1.8)}100%{transform:translate(var(--x),var(--y)) scale(1);opacity:1}}
+@keyframes merge{0%{transform:translate(var(--x),var(--y)) scale(1)}50%{transform:translate(var(--x),var(--y)) scale(1.18);filter:brightness(1.25)}100%{transform:translate(var(--x),var(--y)) scale(1)}}
+@keyframes glow{0%,100%{box-shadow:0 12px 30px rgba(0,0,0,.28),0 0 0 rgba(250,204,21,0)}45%{box-shadow:0 12px 30px rgba(0,0,0,.28),0 0 42px rgba(250,204,21,.6)}}
+.footer{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}.progress{height:16px;border-radius:999px;background:rgba(2,6,23,.35);border:1px solid rgba(253,224,71,.16);overflow:hidden}
+#progressBar{height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,#f59e0b,#facc15,#fef08a);transition:width .3s ease}
+#goalLabel{color:var(--muted);font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.08em}
+.overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(18,11,2,.55);backdrop-filter:blur(6px);z-index:20;padding:16px}.overlay.show{display:flex}
+.overlay-card{width:min(420px,100%);padding:26px;text-align:center}.overlay-card h2{font-size:40px;margin:0 0 8px;letter-spacing:-.05em}.overlay-card p{color:var(--muted)}
+@media(max-width:900px){body{overflow:auto;align-items:flex-start;padding:8px}#wrap{height:auto;width:100%;grid-template-columns:1fr;gap:8px}#ui{order:2}#gamePanel{order:1}#board{--size:min(92vw,560px)}.mode-row{width:100%}.mode-row button{flex:1}.footer{grid-template-columns:1fr}}
+@media(orientation:landscape) and (max-height:620px){body{overflow:hidden;padding:6px}#wrap{height:100vh;width:100vw;grid-template-columns:230px 1fr;gap:8px;padding:6px}#ui,#gamePanel{border-radius:18px;padding:10px}h1{font-size:28px}.box{padding:8px;border-radius:12px}.box b{font-size:19px}.hint{font-size:11px;line-height:1.25}button,select{padding:8px;font-size:12px;border-radius:12px}#board{--size:min(calc(100vh - 140px),calc(100vw - 260px));--gap:8px;border-radius:20px}.cell,.tile{border-radius:14px}.titleblock h2{font-size:22px}.subtitle,.titleblock p{font-size:11px}}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <aside id="ui">
+    <h1>Liquid<br>2048</h1>
+    <div class="subtitle">Swipe or use arrow keys. Merge matching tiles. Become suspiciously powerful.</div>
+    <div class="stat-grid">
+      <div class="box"><span>Score</span><b id="score">0</b></div>
+      <div class="box"><span>Best</span><b id="best">0</b></div>
+      <div class="box"><span>Moves</span><b id="moves">0</b></div>
+      <div class="box"><span>Largest</span><b id="largest">2</b></div>
+    </div>
+    <button class="primary" id="newGame">New Game</button>
+    <button id="undo">Undo Move</button>
+    <button class="danger" id="resetBest">Reset Best</button>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="general">General</button>
+      <button class="tab-btn" data-tab="style">Style</button>
+      <button class="tab-btn" data-tab="help">Help</button>
+    </div>
+    <section class="tab-panel active" id="tab-general">
+      <h3>Game</h3>
+      <div class="box"><span>Goal Tile</span><select id="goal"><option>512</option><option>1024</option><option selected>2048</option><option>4096</option><option>8192</option></select></div>
+      <div class="hint"><strong>Tip:</strong> keep your largest tile in a corner and build around it.</div>
+    </section>
+    <section class="tab-panel" id="tab-style">
+      <h3>Feel</h3>
+      <div class="box"><span>Animation Speed</span><select id="speed"><option value="fast">Fast</option><option value="smooth" selected>Smooth</option><option value="floaty">Floaty</option></select></div>
+      <button id="sparkleToggle">Sparkles: On</button>
+      <div class="hint">Yellow theme, warm glass, satisfying merge pops.</div>
+    </section>
+    <section class="tab-panel" id="tab-help">
+      <h3>Controls</h3>
+      <div class="hint">Arrow keys or WASD. Swipe on mobile. Undo restores one move.</div>
+    </section>
+  </aside>
+  <main id="gamePanel">
+    <div class="topbar">
+      <div class="titleblock"><h2>4 × 4 Puzzle</h2><p id="status">Ready. Make the numbers smooch.</p></div>
+      <div class="mode-row"><button id="hintBtn">Hint</button><button class="primary" id="continueBtn">Keep Going</button></div>
+    </div>
+    <div class="board-shell"><div id="board"><div class="grid" id="grid"></div><div class="tile-layer" id="tiles"></div></div></div>
+    <div class="footer"><div class="progress"><div id="progressBar"></div></div><div id="goalLabel">Goal: 2048</div></div>
+  </main>
+</div>
+<div class="overlay" id="overlay"><div class="overlay-card"><h2 id="overlayTitle">Game Over</h2><p id="overlayText">No more moves.</p><button class="primary" id="overlayNew">New Game</button><button id="overlayClose">Close</button></div></div>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const gridEl=$('grid'),tilesEl=$('tiles'),boardEl=$('board');
+const scoreEl=$('score'),bestEl=$('best'),movesEl=$('moves'),largestEl=$('largest'),statusEl=$('status'),progressBar=$('progressBar'),goalEl=$('goal'),goalLabel=$('goalLabel');
+const overlay=$('overlay'),overlayTitle=$('overlayTitle'),overlayText=$('overlayText');
+let board,score,moves,best=Number(localStorage.getItem('liquid2048Best')||0),won=false,keepGoing=false,history=[],tileId=1,sparkles=true,animMs=180,locked=false;
+const dirs={ArrowUp:[-1,0],KeyW:[-1,0],ArrowDown:[1,0],KeyS:[1,0],ArrowLeft:[0,-1],KeyA:[0,-1],ArrowRight:[0,1],KeyD:[0,1]};
+const tileColors={2:['#fef3c7','#1c1203'],4:['#fde68a','#1c1203'],8:['#facc15','#1c1203'],16:['#f59e0b','#1c1203'],32:['#fb923c','#1c1203'],64:['#f97316','#fff7d6'],128:['#fbbf24','#1c1203'],256:['#eab308','#1c1203'],512:['#ca8a04','#fff7d6'],1024:['#a16207','#fff7d6'],2048:['#fef08a','#1c1203'],4096:['#fcd34d','#1c1203'],8192:['#fff7ed','#1c1203']};
+function emptyBoard(){return Array.from({length:4},()=>Array(4).fill(null));}
+function makeTile(value,row,col){return {id:tileId++,value,row,col,prevRow:row,prevCol:col,merged:false,spawn:true};}
+function cloneBoard(b=board){return b.map(r=>r.map(t=>t?{...t}:null));}
+function saveState(){history=[{board:cloneBoard(),score,moves,won,keepGoing},...history].slice(0,1);}
+function restoreState(){if(!history.length||locked)return;const h=history.shift();board=h.board;score=h.score;moves=h.moves;won=h.won;keepGoing=h.keepGoing;render(true);updateStats();statusEl.textContent='Undo! Time wobble achieved.';}
+function start(){board=emptyBoard();score=0;moves=0;won=false;keepGoing=false;history=[];tileId=1;addRandom();addRandom();render(true);updateStats();hideOverlay();statusEl.textContent='Ready. Make the numbers smooch.';}
+function addRandom(){const empty=[];for(let r=0;r<4;r++)for(let c=0;c<4;c++)if(!board[r][c])empty.push([r,c]);if(!empty.length)return;const [r,c]=empty[Math.floor(Math.random()*empty.length)];board[r][c]=makeTile(Math.random()<.9?2:4,r,c);}
+function orderedPositions(dr,dc){const rows=[0,1,2,3],cols=[0,1,2,3];if(dr>0)rows.reverse();if(dc>0)cols.reverse();const pos=[];for(const r of rows)for(const c of cols)pos.push([r,c]);return pos;}
+function move(dr,dc){if(locked)return;locked=true;saveState();let moved=false,gained=0;for(const row of board)for(const t of row)if(t){t.prevRow=t.row;t.prevCol=t.col;t.merged=false;t.spawn=false;}const positions=orderedPositions(dr,dc);const mergedThisTurn=new Set();for(const [r,c] of positions){const tile=board[r][c];if(!tile)continue;let nr=r,nc=c;while(true){const tr=nr+dr,tc=nc+dc;if(tr<0||tr>3||tc<0||tc>3)break;const target=board[tr][tc];if(!target){nr=tr;nc=tc;continue;}if(target.value===tile.value&&!mergedThisTurn.has(target.id)){board[r][c]=null;target.value*=2;target.merged=true;target.prevRow=tile.prevRow;target.prevCol=tile.prevCol;mergedThisTurn.add(target.id);gained+=target.value;moved=true;break;}break;}if(board[r][c]===tile&&(nr!==r||nc!==c)){board[r][c]=null;board[nr][nc]=tile;tile.row=nr;tile.col=nc;moved=true;}}
+if(!moved){history.shift();statusEl.textContent=randomNope();render(false);setTimeout(()=>locked=false,animMs);return;}
+score+=gained;moves++;addRandom();render(false);updateStats();setTimeout(()=>locked=false,animMs+40);const largest=getLargest();if(largest>=Number(goalEl.value)&&!won&&!keepGoing){won=true;showOverlay('You Win!','You made '+largest+'. The board bows before you.');}else if(!canMove()){showOverlay('Game Over','No more moves. The tiles have unionized.');}else statusEl.textContent=gained?mergeText(gained):'Smooth move.';}
+function canMove(){for(let r=0;r<4;r++)for(let c=0;c<4;c++){const t=board[r][c];if(!t)return true;if(r<3&&board[r+1][c]?.value===t.value)return true;if(c<3&&board[r][c+1]?.value===t.value)return true;}return false;}
+function getLargest(){let m=0;for(const row of board)for(const t of row)if(t)m=Math.max(m,t.value);return m;}
+function updateStats(){best=Math.max(best,score);localStorage.setItem('liquid2048Best',best);scoreEl.textContent=score;bestEl.textContent=best;movesEl.textContent=moves;const largest=getLargest();largestEl.textContent=largest;const goal=Number(goalEl.value);goalLabel.textContent='Goal: '+goal;progressBar.style.width=Math.min(100,Math.log2(largest)/Math.log2(goal)*100)+'%';}
+function render(immediate){gridEl.innerHTML='';for(let i=0;i<16;i++){const d=document.createElement('div');d.className='cell';gridEl.appendChild(d);}tilesEl.innerHTML='';const metrics=getMetrics();for(const row of board)for(const tile of row)if(tile)drawTile(tile,metrics,immediate);}
+function getMetrics(){const rect=boardEl.getBoundingClientRect();const gap=parseFloat(getComputedStyle(boardEl).getPropertyValue('--gap'));const inner=rect.width-gap*2;const size=(inner-gap*3)/4;return {gap,size};}
+function drawTile(t,m,immediate){const d=document.createElement('div');d.className='tile';if(t.spawn&&!immediate)d.classList.add('spawn');if(t.merged&&!immediate)d.classList.add(t.value>=2048?'super':'merge');d.textContent=t.value;const [bg,fg]=tileColors[t.value]||['#fff7ed','#1c1203'];d.style.background=`linear-gradient(135deg,${bg},${shade(bg)})`;d.style.color=fg;d.style.fontSize=fontSize(t.value,m.size);d.style.width=m.size+'px';d.style.height=m.size+'px';const x=t.col*(m.size+m.gap),y=t.row*(m.size+m.gap);d.style.setProperty('--x',x+'px');d.style.setProperty('--y',y+'px');d.style.transitionDuration=animMs+'ms';if(immediate)d.style.transform=`translate(${x}px,${y}px)`;else{const sx=t.prevCol*(m.size+m.gap),sy=t.prevRow*(m.size+m.gap);d.style.transform=`translate(${sx}px,${sy}px)`;requestAnimationFrame(()=>{d.style.transform=`translate(${x}px,${y}px)`;});}tilesEl.appendChild(d);if(t.merged&&sparkles)setTimeout(()=>spark(t.row,t.col,m),animMs*.55);}
+function fontSize(v,s){const digits=String(v).length;return Math.max(22,s*(digits<=2?.44:digits===3?.36:digits===4?.30:.24))+'px';}
+function shade(hex){const n=parseInt(hex.slice(1),16);let r=(n>>16)&255,g=(n>>8)&255,b=n&255;r=Math.min(255,r+24);g=Math.min(255,g+18);b=Math.min(255,b+8);return `rgb(${r},${g},${b})`;}
+function spark(r,c,m){const x=12+c*(m.size+m.gap)+m.size/2,y=12+r*(m.size+m.gap)+m.size/2;for(let i=0;i<10;i++){const s=document.createElement('div');s.style.position='absolute';s.style.left=x+'px';s.style.top=y+'px';s.style.width='6px';s.style.height='6px';s.style.borderRadius='50%';s.style.background=i%2?'#fff7ad':'#facc15';s.style.pointerEvents='none';s.style.opacity='1';s.style.transform='translate(-50%,-50%)';s.style.transition='transform .45s ease,opacity .45s ease';tilesEl.appendChild(s);const a=Math.PI*2*i/10,dist=30+Math.random()*30;requestAnimationFrame(()=>{s.style.transform=`translate(calc(-50% + ${Math.cos(a)*dist}px),calc(-50% + ${Math.sin(a)*dist}px)) scale(.2)`;s.style.opacity='0';});setTimeout(()=>s.remove(),500);}}
+function showOverlay(title,text){overlayTitle.textContent=title;overlayText.textContent=text;overlay.classList.add('show');}
+function hideOverlay(){overlay.classList.remove('show');}
+function randomNope(){return ['Nope. Wall bonk.','That way is packed.','Tiles said nah.','Zero movement. Tiny tragedy.'][Math.floor(Math.random()*4)];}
+function mergeText(n){return ['Merged for '+n+'!','Crunchy merge: +'+n,'Numbers combined: +'+n,'Chain merge: +'+n][Math.floor(Math.random()*4)];}
+function hint(){const tests=[[0,-1,'Left'],[0,1,'Right'],[-1,0,'Up'],[1,0,'Down']];let bestMove=null,bestScore=-1;for(const [dr,dc,name] of tests){const sim=simulate(dr,dc);if(sim.moved&&sim.score>bestScore){bestScore=sim.score;bestMove=name;}}statusEl.textContent=bestMove?'Try '+bestMove+'.':'No good moves detected. Panic politely.';}
+function simulate(dr,dc){const old=board,oldScore=score;board=cloneBoard(old);let gained=0,moved=false;const pos=orderedPositions(dr,dc),merged=new Set();for(const [r,c] of pos){const tile=board[r][c];if(!tile)continue;let nr=r,nc=c;while(true){const tr=nr+dr,tc=nc+dc;if(tr<0||tr>3||tc<0||tc>3)break;const target=board[tr][tc];if(!target){nr=tr;nc=tc;continue;}if(target.value===tile.value&&!merged.has(target.id)){board[r][c]=null;target.value*=2;merged.add(target.id);gained+=target.value;moved=true;break;}break;}if(board[r][c]===tile&&(nr!==r||nc!==c)){board[r][c]=null;board[nr][nc]=tile;moved=true;}}board=old;score=oldScore;return {moved,score:gained};}
+for(const btn of document.querySelectorAll('.tab-btn'))btn.onclick=()=>{document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));btn.classList.add('active');$('tab-'+btn.dataset.tab).classList.add('active');};
+document.addEventListener('keydown',e=>{if(dirs[e.code]){e.preventDefault();const [dr,dc]=dirs[e.code];move(dr,dc);}});
+let touchStart=null;boardEl.addEventListener('pointerdown',e=>{touchStart={x:e.clientX,y:e.clientY};boardEl.setPointerCapture(e.pointerId);});boardEl.addEventListener('pointerup',e=>{if(!touchStart)return;const dx=e.clientX-touchStart.x,dy=e.clientY-touchStart.y;touchStart=null;if(Math.hypot(dx,dy)<24)return;if(Math.abs(dx)>Math.abs(dy))move(0,dx>0?1:-1);else move(dy>0?1:-1,0);});
+$('newGame').onclick=start;$('overlayNew').onclick=start;$('overlayClose').onclick=hideOverlay;$('undo').onclick=restoreState;$('hintBtn').onclick=hint;$('continueBtn').onclick=()=>{keepGoing=true;hideOverlay();statusEl.textContent='Okay, endless mode enabled.';};$('resetBest').onclick=()=>{best=0;localStorage.setItem('liquid2048Best','0');updateStats();};goalEl.onchange=()=>updateStats();$('sparkleToggle').onclick=()=>{sparkles=!sparkles;$('sparkleToggle').textContent='Sparkles: '+(sparkles?'On':'Off');};$('speed').onchange=e=>{const v=e.target.value;animMs=v==='fast'?120:v==='floaty'?260:180;};
+new ResizeObserver(()=>render(true)).observe(boardEl);
+start();
+</script>
+</body>
+</html>

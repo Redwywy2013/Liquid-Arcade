@@ -85,10 +85,68 @@ h1{
   font-size:16px;
   line-height:1.55;
 }
+.category-shell{
+  position:relative;
+  margin:18px 0 0;
+  padding:12px 12px 0;
+  border-radius:22px 22px 0 0;
+  background:rgba(2,6,23,.35);
+  border:1px solid rgba(148,163,184,.14);
+  border-bottom:none;
+}
+.tab-panel{
+  margin-top:-1px;
+  padding-top:18px;
+  border-top:1px solid rgba(148,163,184,.14);
+}
+
+  margin:18px 0 0;
+  border-bottom:1px solid rgba(148,163,184,.16);
+}
+.category-tabs{
+  display:flex;
+  gap:8px;
+  padding:0 10px;
+  overflow-x:auto;
+}
+.category-tab{
+  position:relative;
+  padding:12px 18px;
+  border:none;
+  border-radius:16px 16px 0 0;
+  background:rgba(15,23,42,.45);
+  color:var(--muted);
+  font-weight:900;
+  letter-spacing:.02em;
+  cursor:pointer;
+  transition:all .2s ease;
+}
+.category-tab:hover{
+  background:rgba(30,41,59,.82);
+  color:var(--text);
+}
+.category-tab.active{
+  background:rgba(15,23,42,.95);
+  color:var(--text);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.05),
+    0 -1px 0 rgba(56,189,248,.3),
+    0 0 30px rgba(56,189,248,.12);
+}
+.category-tab.active::after{
+  content:"";
+  position:absolute;
+  left:12px;
+  right:12px;
+  bottom:0;
+  height:3px;
+  border-radius:999px;
+  background:linear-gradient(90deg,#38bdf8,#22c55e);
+}
 .grid{
   flex:1;
   display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
+  grid-template-columns:repeat(3,minmax(0,1fr));
   gap:18px;
   align-content:center;
   padding:22px 0 0;
@@ -175,7 +233,7 @@ h1{
   border-radius:24px;
   border:1px solid rgba(148,163,184,.18);
   background:
-    radial-gradient(circle at 28% 30%,var(--selected-glow),transparent 32%),
+    radial-gradient(circle at 50% 50%,var(--selected-glow),transparent 34%),
     linear-gradient(180deg,rgba(2,6,23,.3),rgba(2,6,23,.7));
   display:grid;
   place-items:center;
@@ -296,7 +354,12 @@ h1{
       <p class="subtitle">Interactive simulations, experiments, and arcade projects.</p>
     </section>
 
-    <section class="grid" id="grid"></section>
+    <div class="category-shell">
+      <nav class="category-tabs" id="categoryTabs" aria-label="Project categories"></nav>
+    </div>
+    <div class="tab-panel">
+      <section class="grid" id="grid"></section>
+    </div>
   </main>
 
   <aside class="drawer">
@@ -325,6 +388,7 @@ const games=[
     route:"/liquids/electrons/",
     type:"Sandbox",
     tag:"Sim",
+    categories:["All","Simulations","Sandboxes"],
     color:"#38bdf8",
     desc:"A slick circuit sandbox where batteries, resistors, LEDs, buzzers, motors, switches, and other parts can be dragged into a glowing workspace and tested like a tiny digital electronics bench.",
     launch:"Complete the circuit.",
@@ -341,6 +405,7 @@ const games=[
     route:"/liquids/snake/",
     type:"Arcade Sandbox",
     tag:"Game",
+    categories:["All","Games","Arcade"],
     color:"#22c55e",
     desc:"A polished snake game with smooth movement, adjustable board sizes, keybinds, food settings, color controls, score tracking, and enough glow to make the old Nokia snake jealous.",
     launch:"Consume the glowing circles.",
@@ -357,6 +422,7 @@ const games=[
     route:"/liquids/universe/",
     type:"Physics Sandbox",
     tag:"Sandbox",
+    categories:["All","Simulations","Sandboxes"],
     color:"#a78bfa",
     desc:"A gravity sandbox for building solar systems, tossing bodies into orbit, merging objects, making black holes, tuning physics, and watching space do space crimes.",
     launch:"Bend space responsibly.",
@@ -373,6 +439,7 @@ const games=[
     route:"/liquids/calc/",
     type:"Tool Sandbox",
     tag:"Tool",
+    categories:["All","Tools","Sandboxes"],
     color:"#f97316",
     desc:"A glowing scientific calculator with variables, custom functions, memory, history, base modes, and power tools for heavier math work.",
     launch:"Crunch the chaos.",
@@ -389,6 +456,7 @@ const games=[
     route:"/liquids/2048/",
     type:"Puzzle Sandbox",
     tag:"Puzzle",
+    categories:["All","Games","Puzzles"],
     color:"#facc15",
     desc:"A glowing version of 2048 where numbered tiles slide, merge, and escalate into increasingly chaotic powers of two.",
     launch:"Merge toward infinity.",
@@ -398,10 +466,58 @@ const games=[
       ["Survive", "Manage space carefully before the board completely fills up."]
     ],
     icon:`<svg viewBox="0 0 100 100" fill="none"><rect x="18" y="18" width="28" height="28" rx="8" fill="#facc15"/><rect x="54" y="18" width="28" height="28" rx="8" fill="#fde68a"/><rect x="18" y="54" width="28" height="28" rx="8" fill="#f59e0b"/><rect x="54" y="54" width="28" height="28" rx="8" fill="#f97316"/><path d="M32 32h36v36" stroke="#fff7ed" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+  },
+  {
+    id:"minesweeper",
+    title:"Liquid Minesweeper",
+    route:"/liquids/minesweeper/",
+    type:"Puzzle Sandbox",
+    tag:"Puzzle",
+    categories:["All","Games","Puzzles"],
+    color:"#ef4444",
+    desc:"A glowing Minesweeper puzzle with hidden mines, number clues, flags, and careful clicks that can either clear the board or unleash instant chaos.",
+    launch:"Defuse the grid.",
+    features:[
+      ["Reveal", "Click tiles to uncover safe spaces and clue numbers."],
+      ["Flag", "Mark suspected mines before they ruin your whole afternoon."],
+      ["Solve", "Use logic, pattern reading, and bravery to clear the field."]
+    ],
+    icon:`<svg viewBox="0 0 100 100" fill="none"><rect x="16" y="16" width="68" height="68" rx="14" fill="rgba(239,68,68,.18)" stroke="#ef4444" stroke-width="6"/><path d="M33 33h34M33 50h34M33 67h34M33 33v34M50 33v34M67 33v34" stroke="#fecaca" stroke-width="3" opacity=".8"/><circle cx="50" cy="50" r="10" fill="#ef4444"/><path d="M50 32v-9M50 77v-9M32 50h-9M77 50h-9M37 37l-7-7M70 70l-7-7M63 37l7-7M30 70l7-7" stroke="#f97316" stroke-width="5" stroke-linecap="round"/></svg>`
+  },
+  {
+    id:"tetris",
+    title:"Liquid Tetris",
+    route:"/liquids/tetris/",
+    type:"Arcade Sandbox",
+    tag:"Game",
+    categories:["All","Games"],
+    color:"#ec4899",
+    desc:"A pink neon version of Tetris with glowing falling blocks, fast rotations, stacked combos, and arcade-style visual effects.",
+    launch:"Stack beyond reason.",
+    features:[
+      ["Rotate", "Spin and position falling tetrominoes with fast responsive controls."],
+      ["Clear", "Complete rows to clear lines and keep the stack under control."],
+      ["Survive", "Manage speed increases and chaotic stacks as the game accelerates."]
+    ],
+    icon:`<svg viewBox="0 0 100 100" fill="none"><rect x="20" y="20" width="18" height="18" rx="4" fill="#ec4899"/><rect x="40" y="20" width="18" height="18" rx="4" fill="#f472b6"/><rect x="60" y="20" width="18" height="18" rx="4" fill="#ec4899"/><rect x="40" y="40" width="18" height="18" rx="4" fill="#db2777"/><rect x="40" y="60" width="18" height="18" rx="4" fill="#f9a8d4"/></svg>`
   }
 ];
 
 const grid=document.getElementById("grid");
+const categoryTabs=document.getElementById("categoryTabs");
+const categories=[
+  {name:"All",icon:"◈"},
+  {name:"Games",icon:"🎮"},
+  {name:"Simulations",icon:"⚙"},
+  {name:"Puzzles",icon:"🧩"},
+  {name:"Tools",icon:"🛠"},
+  {name:"Sandboxes",icon:"🌌"}
+];
+
+const tabGroups={
+  "All":["Games","Simulations","Puzzles","Tools","Sandboxes"]
+};
+let activeCategory="All";
 const panelArt=document.getElementById("panelArt");
 const panelTitle=document.getElementById("panelTitle");
 const panelDesc=document.getElementById("panelDesc");
@@ -425,6 +541,30 @@ function renderCard(game){
   grid.appendChild(card);
 }
 
+function renderCategoryTabs(){
+  categoryTabs.innerHTML="";
+  categories.forEach(category=>{
+    const tab=document.createElement("button");
+    tab.className="category-tab";
+    tab.type="button";
+    tab.innerHTML=`${category.icon} ${category.name}`;
+    tab.classList.toggle("active",category.name===activeCategory);
+    tab.addEventListener("click",()=>{
+      activeCategory=category.name;
+      renderCategoryTabs();
+      renderGrid();
+    });
+    categoryTabs.appendChild(tab);
+  });
+}
+
+function renderGrid(){
+  grid.innerHTML="";
+  const shown=games.filter(game=>game.categories.includes(activeCategory));
+  shown.forEach(renderCard);
+  selectGame(shown[0]||games[0],document.querySelector('.card'));
+}
+
 function selectGame(game,card){
   document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));
   card.classList.add("active");
@@ -444,8 +584,8 @@ function selectGame(game,card){
   playBtn.href=game.route;
 }
 
-games.forEach(renderCard);
-selectGame(games[0],document.querySelector('.card'));
+renderCategoryTabs();
+renderGrid();
 </script>
 </body>
 </html>
