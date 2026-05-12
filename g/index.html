@@ -1,14 +1,590 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta http-equiv="refresh" content="0; url=/" />
-<title>Redirecting...</title>
-<script>
-window.location.replace("/");
-</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Liquid Arcade</title>
+  <style>
+    :root{
+      --bg:#07111f;
+      --panel:rgba(15,23,42,.68);
+      --panel2:rgba(30,41,59,.45);
+      --border:rgba(148,163,184,.22);
+      --text:#e5f7ff;
+      --muted:#8ea4b8;
+      --cyan:#22d3ee;
+      --blue:#38bdf8;
+      --good:#5eead4;
+      --hot:#fb7185;
+      --shadow:0 0 30px rgba(34,211,238,.18),0 24px 80px rgba(0,0,0,.38);
+      --radius:28px;
+    }
+
+    *{box-sizing:border-box}
+
+    html,body{
+      margin:0;
+      min-height:100%;
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 20% 0%,rgba(34,211,238,.25),transparent 34%),
+        radial-gradient(circle at 90% 15%,rgba(59,130,246,.22),transparent 32%),
+        radial-gradient(circle at 40% 100%,rgba(45,212,191,.16),transparent 35%),
+        var(--bg);
+      overflow-x:hidden;
+    }
+
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      background:
+        linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
+      background-size:42px 42px;
+      mask-image:radial-gradient(circle at center,black,transparent 78%);
+      opacity:.35;
+    }
+
+    .shell{
+      width:min(1220px,calc(100vw - 28px));
+      min-height:100vh;
+      margin:0 auto;
+      padding:28px 0;
+      display:grid;
+      grid-template-columns:320px 1fr;
+      gap:18px;
+    }
+
+    .glass{
+      border:1px solid var(--border);
+      background:linear-gradient(145deg,rgba(15,23,42,.78),rgba(15,23,42,.42));
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(18px);
+      -webkit-backdrop-filter:blur(18px);
+      border-radius:var(--radius);
+    }
+
+    aside{
+      position:sticky;
+      top:28px;
+      height:calc(100vh - 56px);
+      padding:20px;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      overflow:hidden;
+    }
+
+    .brand{
+      padding:16px;
+      border-radius:24px;
+      background:radial-gradient(circle at 25% 0%,rgba(34,211,238,.22),rgba(15,23,42,.2));
+      border:1px solid rgba(34,211,238,.18);
+    }
+
+    .eyebrow{
+      margin:0 0 6px;
+      color:var(--good);
+      font-size:12px;
+      letter-spacing:.18em;
+      text-transform:uppercase;
+      font-weight:800;
+    }
+
+    h1{
+      margin:0;
+      font-size:clamp(34px,4vw,54px);
+      line-height:.95;
+      letter-spacing:-.06em;
+    }
+
+    .brand p,.hint{
+      color:var(--muted);
+      line-height:1.45;
+      margin:12px 0 0;
+      font-size:14px;
+    }
+
+    code{
+      color:#bff8ff;
+      background:rgba(34,211,238,.1);
+      border:1px solid rgba(34,211,238,.16);
+      border-radius:8px;
+      padding:1px 5px;
+    }
+
+    .stats{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+
+    .stat{
+      padding:14px;
+      border-radius:20px;
+      background:rgba(15,23,42,.48);
+      border:1px solid var(--border);
+    }
+
+    .stat b{
+      display:block;
+      font-size:26px;
+      line-height:1;
+    }
+
+    .stat span{
+      display:block;
+      margin-top:6px;
+      color:var(--muted);
+      font-size:11px;
+      font-weight:800;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+    }
+
+    .searchBox{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      padding:12px 14px;
+      border-radius:20px;
+      background:rgba(2,6,23,.42);
+      border:1px solid rgba(148,163,184,.22);
+    }
+
+    .searchBox input{
+      width:100%;
+      border:0;
+      outline:0;
+      color:var(--text);
+      background:transparent;
+      font-size:15px;
+      font-weight:700;
+    }
+
+    .searchBox input::placeholder{color:#7890a4}
+
+    .sideList{
+      min-height:0;
+      overflow:auto;
+      padding-right:4px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+
+    .sideList a{
+      text-decoration:none;
+      color:var(--text);
+      padding:12px 14px;
+      border-radius:18px;
+      border:1px solid transparent;
+      background:rgba(15,23,42,.28);
+      font-weight:800;
+      transition:.18s ease;
+    }
+
+    .sideList a:hover,.sideList a.active{
+      border-color:rgba(34,211,238,.38);
+      background:rgba(34,211,238,.12);
+      box-shadow:0 0 18px rgba(34,211,238,.14);
+      transform:translateX(2px);
+    }
+
+    main{
+      min-width:0;
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+    }
+
+    .hero{
+      padding:24px;
+      display:flex;
+      align-items:end;
+      justify-content:space-between;
+      gap:18px;
+      min-height:190px;
+      overflow:hidden;
+      position:relative;
+    }
+
+    .hero::after{
+      content:"";
+      position:absolute;
+      width:280px;
+      height:280px;
+      border-radius:50%;
+      right:-80px;
+      top:-100px;
+      background:radial-gradient(circle,rgba(34,211,238,.28),transparent 66%);
+      filter:blur(4px);
+    }
+
+    .heroContent{position:relative;z-index:1}
+
+    .hero h2{
+      margin:0;
+      font-size:clamp(32px,5vw,76px);
+      line-height:.9;
+      letter-spacing:-.08em;
+      max-width:760px;
+    }
+
+    .hero p{
+      max-width:650px;
+      margin:14px 0 0;
+      color:var(--muted);
+      font-size:15px;
+      line-height:1.55;
+      font-weight:600;
+    }
+
+    .actions{display:flex;gap:10px;flex-wrap:wrap;position:relative;z-index:1}
+
+    button,.pill{
+      border:0;
+      border-radius:999px;
+      padding:13px 18px;
+      font-weight:950;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+
+    .refresh{
+      color:#04111b;
+      background:linear-gradient(135deg,var(--cyan),var(--blue));
+      box-shadow:0 0 24px rgba(34,211,238,.34);
+    }
+
+    .pill{
+      color:var(--text);
+      background:rgba(15,23,42,.52);
+      border:1px solid var(--border);
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+    }
+
+    button:active,.pill:active{transform:translateY(1px)}
+
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+      gap:14px;
+    }
+
+    .card{
+      min-height:168px;
+      text-decoration:none;
+      color:var(--text);
+      padding:18px;
+      border-radius:26px;
+      border:1px solid var(--border);
+      background:
+        radial-gradient(circle at 20% 0%,rgba(34,211,238,.16),transparent 42%),
+        linear-gradient(145deg,rgba(15,23,42,.72),rgba(30,41,59,.38));
+      box-shadow:0 18px 50px rgba(0,0,0,.24);
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      position:relative;
+      overflow:hidden;
+      transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;
+    }
+
+    .card:hover{
+      transform:translateY(-4px);
+      border-color:rgba(34,211,238,.48);
+      box-shadow:0 0 30px rgba(34,211,238,.18),0 26px 80px rgba(0,0,0,.36);
+    }
+
+    .card::before{
+      content:"";
+      position:absolute;
+      inset:auto -40px -55px auto;
+      width:140px;
+      height:140px;
+      border-radius:50%;
+      background:radial-gradient(circle,rgba(94,234,212,.18),transparent 68%);
+    }
+
+    .icon{
+      width:46px;
+      height:46px;
+      border-radius:18px;
+      display:grid;
+      place-items:center;
+      background:rgba(34,211,238,.12);
+      border:1px solid rgba(34,211,238,.22);
+      box-shadow:inset 0 0 18px rgba(34,211,238,.08);
+      font-size:23px;
+    }
+
+    .card h3{
+      position:relative;
+      margin:20px 0 7px;
+      font-size:22px;
+      letter-spacing:-.04em;
+    }
+
+    .card p{
+      position:relative;
+      margin:0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.4;
+      font-weight:650;
+    }
+
+    .go{
+      position:relative;
+      margin-top:18px;
+      color:var(--good);
+      font-weight:950;
+      font-size:13px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+
+    .empty,.error{
+      padding:22px;
+      border-radius:24px;
+      background:rgba(15,23,42,.52);
+      border:1px solid var(--border);
+      color:var(--muted);
+      font-weight:750;
+    }
+
+    .error{border-color:rgba(251,113,133,.35);color:#fecdd3}
+
+    ::-webkit-scrollbar{width:10px;height:10px}
+    ::-webkit-scrollbar-track{background:rgba(15,23,42,.35);border-radius:999px}
+    ::-webkit-scrollbar-thumb{background:rgba(34,211,238,.35);border-radius:999px}
+
+    @media (max-width:860px){
+      .shell{grid-template-columns:1fr;padding:14px 0}
+      aside{position:relative;top:0;height:auto;max-height:44vh}
+      .hero{align-items:stretch;flex-direction:column}
+      .actions{align-self:flex-start}
+    }
+  </style>
 </head>
 <body>
-Redirecting...
+  <div class="shell">
+    <aside class="glass">
+      <section class="brand">
+        <p class="eyebrow">Liquid Arcade</p>
+        <h1>Game<br>Deck</h1>
+        <p>Reads your <code>games.txt</code> file and builds a shiny launch menu automatically.</p>
+      </section>
+
+      <div class="stats">
+        <div class="stat"><b id="gameCount">0</b><span>Games</span></div>
+        <div class="stat"><b id="visibleCount">0</b><span>Showing</span></div>
+      </div>
+
+      <label class="searchBox" aria-label="Search games">
+        <span>⌕</span>
+        <input id="search" type="search" placeholder="Search games..." autocomplete="off" />
+      </label>
+
+      <nav id="sideList" class="sideList" aria-label="Games"></nav>
+    </aside>
+
+    <main>
+      <section class="hero glass">
+        <div class="heroContent">
+          <p class="eyebrow">Choose your chaos</p>
+          <h2>Pick a game and melt into the arcade.</h2>
+          <p id="status">Loading games...</p>
+        </div>
+        <div class="actions">
+          <button class="refresh" id="reloadBtn">Reload List</button>
+          <a class="pill" href="./games.txt" target="_blank" rel="noopener">Open games.txt</a>
+        </div>
+      </section>
+
+      <section id="grid" class="grid" aria-live="polite"></section>
+    </main>
+  </div>
+
+  <script>
+    // Put this file at /g/index.html and your list at /g/games.txt.
+    // It also tries /games.txt and the GitHub raw URL for preview/testing.
+    const GAME_LIST_URLS = [
+      "./games.txt",
+      "/g/games.txt",
+      "/games.txt",
+      "https://raw.githubusercontent.com/Redwywy2013/Liquid-Arcade/main/g/games.txt"
+    ];
+
+    const icons = ["🎮","🕹️","⚡","💧","🔥","🌌","🧊","🚀","🧩","👾","✨","🎲"];
+    let games = [];
+    let loadedFrom = "";
+
+    const grid = document.getElementById("grid");
+    const sideList = document.getElementById("sideList");
+    const search = document.getElementById("search");
+    const status = document.getElementById("status");
+    const gameCount = document.getElementById("gameCount");
+    const visibleCount = document.getElementById("visibleCount");
+    const reloadBtn = document.getElementById("reloadBtn");
+
+    function titleCase(value){
+      return value
+        .replace(/^\/+|\/+$/g,"")
+        .replace(/index\.html?$/i,"")
+        .split(/[\s_\-\/]+/)
+        .filter(Boolean)
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ") || "Untitled Game";
+    }
+
+    function cleanUrl(url){
+      const trimmed = url.trim();
+      if(/^https?:\/\//i.test(trimmed)) return trimmed;
+      if(trimmed.startsWith("/")) return trimmed;
+      if(trimmed.startsWith("./")) return trimmed;
+      if(trimmed.includes(".")) return `./${trimmed}`;
+      return `./${trimmed.replace(/^\/+/g,"")}/`;
+    }
+
+    function slugFromUrl(url){
+      return url
+        .replace(/^https?:\/\/[^/]+/i,"")
+        .replace(/^\.\//,"")
+        .replace(/^\/g\//,"")
+        .replace(/index\.html?$/i,"")
+        .replace(/^\/+|\/+$/g,"");
+    }
+
+    function normalizeLine(line){
+      const withoutComment = line.replace(/\s+#.*$/,"").trim();
+      if(!withoutComment || withoutComment.startsWith("#")) return null;
+
+      // Supported formats:
+      // angrybirds
+      // angrybirds/index.html
+      // Angry Birds|angrybirds/
+      // Angry Birds,/g/angrybirds/
+      // Angry Birds;/g/angrybirds/index.html
+      // {"title":"Angry Birds","url":"./angrybirds/"}
+      if(withoutComment.startsWith("{") && withoutComment.endsWith("}")){
+        try{
+          const obj = JSON.parse(withoutComment);
+          const url = cleanUrl(obj.url || obj.href || obj.path || obj.slug || "");
+          return {
+            title: obj.title || obj.name || titleCase(slugFromUrl(url)),
+            url,
+            slug: slugFromUrl(url)
+          };
+        }catch(e){
+          console.warn("Bad JSON line in games.txt:", line);
+          return null;
+        }
+      }
+
+      const parts = withoutComment.split(/[|,;]/).map(x => x.trim()).filter(Boolean);
+      if(parts.length >= 2){
+        const url = cleanUrl(parts[1]);
+        return { title: parts[0], url, slug: slugFromUrl(url) };
+      }
+
+      const url = cleanUrl(withoutComment);
+      return { title:titleCase(slugFromUrl(url)), url, slug:slugFromUrl(url) };
+    }
+
+    function parseGamesTxt(text){
+      const parsed = text.split(/\r?\n/).map(normalizeLine).filter(Boolean);
+      const seen = new Set();
+      return parsed.filter(game => {
+        const key = game.url.toLowerCase();
+        if(seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }
+
+    async function fetchFirstWorkingList(){
+      const errors = [];
+      for(const baseUrl of GAME_LIST_URLS){
+        const cacheBusted = `${baseUrl}${baseUrl.includes("?") ? "&" : "?"}t=${Date.now()}`;
+        try{
+          const response = await fetch(cacheBusted,{cache:"no-store"});
+          if(!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+          const text = await response.text();
+          const parsed = parseGamesTxt(text);
+          if(!parsed.length) throw new Error("No usable game entries");
+          loadedFrom = baseUrl;
+          return parsed;
+        }catch(error){
+          errors.push(`${baseUrl}: ${error.message}`);
+        }
+      }
+      throw new Error(errors.join(" | "));
+    }
+
+    function render(){
+      const q = search.value.trim().toLowerCase();
+      const filtered = games.filter(game => game.title.toLowerCase().includes(q) || game.slug.toLowerCase().includes(q));
+
+      gameCount.textContent = games.length;
+      visibleCount.textContent = filtered.length;
+      grid.innerHTML = "";
+      sideList.innerHTML = "";
+
+      if(!filtered.length){
+        grid.innerHTML = `<div class="empty">No matching games. The arcade found nothing.</div>`;
+        return;
+      }
+
+      filtered.forEach((game,index) => {
+        const card = document.createElement("a");
+        card.className = "card";
+        card.href = game.url;
+        card.innerHTML = `
+          <div>
+            <div class="icon">${icons[index % icons.length]}</div>
+            <h3>${game.title}</h3>
+            <p>Launch <strong>${game.slug || game.title}</strong> from the Liquid Arcade vault.</p>
+          </div>
+          <div class="go">Play Now →</div>
+        `;
+        grid.appendChild(card);
+
+        const sideLink = document.createElement("a");
+        sideLink.href = game.url;
+        sideLink.textContent = game.title;
+        sideList.appendChild(sideLink);
+      });
+    }
+
+    async function loadGames(){
+      status.textContent = "Loading games from games.txt...";
+      reloadBtn.disabled = true;
+
+      try{
+        games = await fetchFirstWorkingList();
+        status.textContent = `Loaded ${games.length} games from ${loadedFrom}.`;
+      }catch(error){
+        games = [];
+        status.textContent = "Could not load games.txt. Make sure it exists beside this index as /g/games.txt.";
+        grid.innerHTML = `<div class="error">Could not load <code>games.txt</code>. Check the file path and push status.</div>`;
+        console.error("Liquid Arcade games.txt load failed:", error);
+      }finally{
+        reloadBtn.disabled = false;
+        render();
+      }
+    }
+
+    search.addEventListener("input", render);
+    reloadBtn.addEventListener("click", loadGames);
+    loadGames();
+  </script>
 </body>
 </html>
