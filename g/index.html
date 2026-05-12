@@ -445,13 +445,24 @@
         .join(" ") || "Untitled Game";
     }
 
+    function gameToSlug(name){
+      return name
+        .toLowerCase()
+        .replace(/[^a-z0-9/ ]+/g,"")
+        .replace(/\\s+/g,"")
+        .replace(/^fnaf1$/,"fnaf/1")
+        .replace(/^fnaf2$/,"fnaf/2")
+        .replace(/^fnaf3$/,"fnaf/3")
+        .replace(/^fnaf4$/,"fnaf/4")
+        .replace(/^fnafsl$/,"fnaf/sl")
+        .replace(/^fnafucn$/,"fnaf/ucn");
+    }
+
     function cleanUrl(url){
       const trimmed = url.trim();
-      if(/^https?:\/\//i.test(trimmed)) return trimmed;
-      if(trimmed.startsWith("/")) return trimmed;
-      if(trimmed.startsWith("./")) return trimmed;
-      if(trimmed.includes(".")) return `./${trimmed}`;
-      return `./${trimmed.replace(/^\/+/g,"")}/`;
+      if(/^https?:\\/\\//i.test(trimmed)) return trimmed;
+      if(trimmed.startsWith("/g/")) return trimmed;
+      return "/g/" + gameToSlug(trimmed);
     }
 
     function slugFromUrl(url){
@@ -491,12 +502,14 @@
 
       const parts = withoutComment.split(/[|,;]/).map(x => x.trim()).filter(Boolean);
       if(parts.length >= 2){
+        const title = parts[0];
         const url = cleanUrl(parts[1]);
-        return { title: parts[0], url, slug: slugFromUrl(url) };
+        return { title, url, slug: slugFromUrl(url) };
       }
 
-      const url = cleanUrl(withoutComment);
-      return { title:titleCase(slugFromUrl(url)), url, slug:slugFromUrl(url) };
+      const title = withoutComment;
+      const url = cleanUrl(title);
+      return { title, url, slug: slugFromUrl(url) };
     }
 
     function parseGamesTxt(text){
